@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "VML AEM 360 Tool",
+  "version": "1.0",
+  "description": "Herramienta para inyectar archivos y carpetas con assets en AEM.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "core/popup.html",
+    "default_icon": "assets/logo-vml.png"
+  },
+  "icons": {
+    "128": "assets/logo-vml.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "modules/asset-injector/content-asset-injector.js"
+      ],
+      "css": [
+        "core/content.css"
+      ],
+      "all_frames": false
+    }
+  ]
+}
