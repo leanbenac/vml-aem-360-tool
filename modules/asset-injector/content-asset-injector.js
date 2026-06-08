@@ -99,7 +99,7 @@ function injectDropzoneUI() {
         .aem-360-log-error { color: #f87171; }
         .aem-360-log-info { color: #94a3b8; }
         .aem-360-log-success { color: #34d399; }
-        .aem-360-log-warn { color: #fbbf24; }
+        .aem-360-log-warn { color: #f97316; } /* Orange para avisos */
     `;
 
     const styleEl = document.createElement('style');
@@ -129,6 +129,9 @@ function injectDropzoneUI() {
                 <span id="aem-360-progress-text-files" style="color: #cbd5e1;">Files: 0 / 0</span>
             </div>
             <div class="aem-360-progress-bar"><div id="aem-360-progress-fill-main" class="aem-360-progress-fill"></div></div>
+            <div id="aem-360-abort-container" style="display: none; margin-top: 8px; text-align: right;">
+                <button id="aem-360-abort-btn" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">Abort Upload</button>
+            </div>
         </div>
         <div id="aem-360-logs">Waiting for files...</div>
         <div id="aem-360-finish-container" style="display: none; padding: 10px; background: #0f172a; border-top: 1px solid #334155;">
@@ -214,6 +217,7 @@ function logToUI(msg, type = 'info') {
     div.className = `aem-360-log-${type}`;
     div.textContent = `> ${msg}`;
     logsEl.appendChild(div);
+    
     logsEl.scrollTop = logsEl.scrollHeight;
 }
 
@@ -307,12 +311,15 @@ async function handleDrop(e) {
 
     logToUI(`Analysis complete: ${foldersToCreate.size} folders, ${filesToUpload.length} files.`, 'success');
     
+    const abortContainer = document.getElementById('aem-360-abort-container');
+    if (abortContainer) abortContainer.style.display = 'block';
+    
     const sortedFolders = Array.from(foldersToCreate).sort((a, b) => a.split('/').length - b.split('/').length);
     
     processUploads(sortedFolders, filesToUpload, progressTextFolders, progressTextFiles, progressFill);
 }
 
-async function uploadSingleFile(fileObj, csrfToken) {
+async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
     let targetFolder = `${currentBasePath}/${fileObj.path.substring(0, fileObj.path.lastIndexOf('/'))}`.replace(/\/\//g, '/');
     if (targetFolder.endsWith('/')) targetFolder = targetFolder.slice(0, -1);
     
@@ -320,66 +327,104 @@ async function uploadSingleFile(fileObj, csrfToken) {
     const fileName = fileObj.file.name;
     const fileSize = fileObj.file.size;
 
-    const initiateUrl = `${folderUrl}.initiateUpload.json`;
-    const initiateFormData = new URLSearchParams();
-    initiateFormData.append('fileName', fileName);
-    initiateFormData.append('fileSize', fileSize);
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const initiateUrl = `${folderUrl}.initiateUpload.json`;
+            const initiateFormData = new URLSearchParams();
+            initiateFormData.append('fileName', fileName);
+            initiateFormData.append('fileSize', fileSize);
 
-    const initResponse = await fetch(initiateUrl, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'CSRF-Token': csrfToken
-        },
-        body: initiateFormData
-    });
+            const initResponse = await fetch(initiateUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'CSRF-Token': tokenRef.current
+                },
+                body: initiateFormData
+            });
 
-    if (!initResponse.ok) {
-        throw new Error(`InitiateUpload failed: ${initResponse.status}`);
-    }
+            if (!initResponse.ok) {
+                if (initResponse.status === 403) {
+                    logToUI(`Token expired (403) during ${fileName}. Auto-refreshing...`, 'warn');
+                    const csrfRes = await fetch('/libs/granite/csrf/token.json');
+                    if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                }
+                throw new Error(`InitiateUpload failed: ${initResponse.status}`);
+            }
 
-    const initData = await initResponse.json();
-    if (!initData.files || initData.files.length === 0) {
-        throw new Error('AEM returned no upload URIs');
-    }
+            const initData = await initResponse.json();
+            if (!initData.files || initData.files.length === 0) {
+                throw new Error('AEM returned no upload URIs');
+            }
 
-    const fileData = initData.files[0];
-    const uploadUri = fileData.uploadURIs[0];
-    const completeUri = initData.completeURI;
-    const uploadToken = fileData.uploadToken;
+            const fileData = initData.files[0];
+            const uploadUri = fileData.uploadURIs[0];
+            const completeUri = initData.completeURI;
+            const uploadToken = fileData.uploadToken;
 
-    const putResponse = await fetch(uploadUri, {
-        method: 'PUT',
-        body: fileObj.file
-    });
+            const putResponse = await fetch(uploadUri, {
+                method: 'PUT',
+                body: fileObj.file
+            });
 
-    if (!putResponse.ok) {
-        throw new Error(`Binary upload failed: ${putResponse.status}`);
-    }
+            if (!putResponse.ok) {
+                throw new Error(`Binary upload failed: ${putResponse.status}`);
+            }
 
-    const completeFormData = new URLSearchParams();
-    completeFormData.append('fileName', fileName);
-    completeFormData.append('mimeType', fileObj.file.type || 'application/octet-stream');
-    if (uploadToken) {
-        completeFormData.append('uploadToken', uploadToken);
-    }
+            const completeFormData = new URLSearchParams();
+            completeFormData.append('fileName', fileName);
+            completeFormData.append('mimeType', fileObj.file.type || 'application/octet-stream');
+            if (uploadToken) {
+                completeFormData.append('uploadToken', uploadToken);
+            }
 
-    const completeResponse = await fetch(completeUri, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'CSRF-Token': csrfToken
-        },
-        body: completeFormData
-    });
+            const completeResponse = await fetch(completeUri, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'CSRF-Token': tokenRef.current
+                },
+                body: completeFormData
+            });
 
-    if (!completeResponse.ok) {
-        throw new Error(`CompleteUpload failed: ${completeResponse.status}`);
+            if (!completeResponse.ok) {
+                if (completeResponse.status === 403) {
+                    logToUI(`Token expired (403) on complete for ${fileName}. Auto-refreshing...`, 'warn');
+                    const csrfRes = await fetch('/libs/granite/csrf/token.json');
+                    if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                }
+                throw new Error(`CompleteUpload failed: ${completeResponse.status}`);
+            }
+            
+            return attempt;
+        } catch (error) {
+            if (attempt === retries) {
+                throw error;
+            }
+            const backoffMs = 2000 * Math.pow(2, attempt - 1) + (Math.random() * 1000); // Exponential backoff + Jitter
+            logToUI(`Retrying upload for ${fileName} (Attempt ${attempt + 1}/${retries})...`, 'warn');
+            await new Promise(res => setTimeout(res, backoffMs));
+        }
     }
 }
 
 async function processUploads(folders, files, textFolders, textFiles, progressFill) {
     let wakeLock = null;
+    let abortRequested = false;
+
+    const abortBtn = document.getElementById('aem-360-abort-btn');
+    if (abortBtn) {
+        abortBtn.onclick = () => {
+            if (!abortRequested) {
+                abortRequested = true;
+                logToUI('ABORT REQUESTED! Stopping new uploads...', 'warn');
+                abortBtn.textContent = 'Aborting...';
+                abortBtn.style.opacity = '0.5';
+                abortBtn.style.cursor = 'not-allowed';
+            }
+        };
+    }
+
     try {
         if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
@@ -391,12 +436,12 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
 
     try {
         logToUI('Getting CSRF token...', 'info');
-        let csrfToken = '';
+        let tokenRef = { current: '' };
         try {
             const csrfResponse = await fetch('/libs/granite/csrf/token.json');
             if (!csrfResponse.ok) throw new Error("No CSRF token");
             const json = await csrfResponse.json();
-            csrfToken = json.token;
+            tokenRef.current = json.token;
         } catch (e) {
             logToUI('Failed to get CSRF token. Make sure you are logged in.', 'error');
             return;
@@ -404,69 +449,144 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
 
         logToUI('Starting folder creation (Concurrency: 5)...', 'info');
         let foldersDone = 0;
+        let foldersFailed = 0;
+        const failedFoldersSet = new Set();
         textFolders.textContent = `Folders: 0 / ${folders.length}`;
         
         await promisePool(folders, 5, async (folder) => {
+            if (abortRequested) return;
+
             let targetPath = `${currentBasePath}/${folder}`.replace(/\/\//g, '/');
             if (targetPath.endsWith('/')) targetPath = targetPath.slice(0, -1);
             
             if (!targetPath.startsWith(currentBasePath)) {
                 logToUI(`BLOCKED: Path escape attempt at ${targetPath}`, 'error');
+                failedFoldersSet.add(folder);
+                foldersFailed++;
                 return;
             }
             
             const formData = new URLSearchParams();
             formData.append('./jcr:primaryType', 'sling:OrderedFolder');
             
-            try {
-                const res = await fetch(targetPath, {
-                    method: 'POST',
-                    headers: {
-                        'CSRF-Token': csrfToken,
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                    },
-                    body: formData
-                });
-                foldersDone++;
-                textFolders.textContent = `Folders: ${foldersDone} / ${folders.length}`;
-                if (res.status === 409) {
-                    logToUI(`Folder already existed: ${folder}`, 'info');
-                } else if (!res.ok && res.status !== 200 && res.status !== 201) {
-                    logToUI(`Error creating folder ${folder} (Status: ${res.status})`, 'error');
+            let success = false;
+            let lastStatus = 0;
+            
+            const maxFolderRetries = 5;
+            for (let attempt = 1; attempt <= maxFolderRetries; attempt++) {
+                try {
+                    const res = await fetch(targetPath, {
+                        method: 'POST',
+                        headers: {
+                            'CSRF-Token': tokenRef.current,
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        },
+                        body: formData
+                    });
+                    lastStatus = res.status;
+                    if (res.status === 409) {
+                        logToUI(`Folder already existed: ${folder}`, 'info');
+                        success = true;
+                        break;
+                    } else if (res.ok || res.status === 200 || res.status === 201) {
+                        success = true;
+                        break;
+                    } else if (res.status === 403) {
+                        logToUI(`Token expired (403) while creating folder ${folder}. Auto-refreshing...`, 'warn');
+                        const csrfRes = await fetch('/libs/granite/csrf/token.json');
+                        if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                        throw new Error(`Folder creation failed: 403`);
+                    }
+                } catch (e) {
+                    // Network error, will retry
                 }
-            } catch (e) {
-                logToUI(`Network error creating folder ${folder}`, 'error');
+                
+                if (attempt < maxFolderRetries) {
+                    const backoffMs = 2000 * Math.pow(2, attempt - 1) + (Math.random() * 1000);
+                    logToUI(`Retrying folder creation ${folder} (Attempt ${attempt + 1}/${maxFolderRetries})...`, 'warn');
+                    await new Promise(res => setTimeout(res, backoffMs));
+                }
             }
+            
+            if (success) {
+                foldersDone++;
+            } else {
+                logToUI(`Error creating folder ${folder} (Final Status: ${lastStatus})`, 'error');
+                failedFoldersSet.add(folder);
+                foldersFailed++;
+            }
+            textFolders.textContent = `Folders: ${foldersDone} / ${folders.length}` + (foldersFailed ? ` (${foldersFailed} err)` : '');
         });
 
         logToUI('Starting file upload (Concurrency: 5)...', 'info');
         let filesDone = 0;
+        let filesFailed = 0;
+        let filesSkipped = 0;
         textFiles.textContent = `Files: 0 / ${files.length}`;
         
         await promisePool(files, 5, async (fileObj) => {
+            if (abortRequested) {
+                filesSkipped++;
+                textFiles.textContent = `Files: ${filesDone} / ${files.length} (${filesFailed} err, ${filesSkipped} skip)`;
+                progressFill.style.width = `${((filesDone + filesFailed + filesSkipped) / files.length) * 100}%`;
+                return;
+            }
+
             const file = fileObj.file;
             const relativePath = fileObj.path;
-            let targetFolder = `${currentBasePath}/${relativePath.substring(0, relativePath.lastIndexOf('/'))}`.replace(/\/\//g, '/');
+            const parentFolder = relativePath.substring(0, relativePath.lastIndexOf('/'));
+            
+            if (failedFoldersSet.has(parentFolder) || Array.from(failedFoldersSet).some(failedPath => parentFolder.startsWith(failedPath + '/'))) {
+                logToUI(`SKIPPED: ${file.name} (Parent folder failed)`, 'warn');
+                filesSkipped++;
+                textFiles.textContent = `Files: ${filesDone} / ${files.length} (${filesFailed} err, ${filesSkipped} skip)`;
+                progressFill.style.width = `${((filesDone + filesFailed + filesSkipped) / files.length) * 100}%`;
+                return;
+            }
+
+            let targetFolder = `${currentBasePath}/${parentFolder}`.replace(/\/\//g, '/');
             if (targetFolder.endsWith('/')) targetFolder = targetFolder.slice(0, -1);
             
             if (!targetFolder.startsWith(currentBasePath)) {
                 logToUI(`BLOCKED: Path escape attempt at file ${relativePath}`, 'error');
+                filesFailed++;
+                textFiles.textContent = `Files: ${filesDone} / ${files.length} (${filesFailed} err, ${filesSkipped} skip)`;
+                progressFill.style.width = `${((filesDone + filesFailed + filesSkipped) / files.length) * 100}%`;
                 return;
             }
 
             try {
-                await uploadSingleFile(fileObj, csrfToken);
+                const attemptNum = await uploadSingleFile(fileObj, tokenRef);
                 filesDone++;
-                textFiles.textContent = `Files: ${filesDone} / ${files.length}`;
-                progressFill.style.width = `${(filesDone / files.length) * 100}%`;
-                logToUI(`OK: ${file.name}`, 'success');
+                textFiles.textContent = `Files: ${filesDone} / ${files.length}` + (filesFailed || filesSkipped ? ` (${filesFailed} err, ${filesSkipped} skip)` : '');
+                progressFill.style.width = `${((filesDone + filesFailed + filesSkipped) / files.length) * 100}%`;
+                
+                if (attemptNum > 1) {
+                    logToUI(`OK (after ${attemptNum} attempts): ${file.name}`, 'success');
+                } else {
+                    logToUI(`OK: ${file.name}`, 'success');
+                }
             } catch (e) {
                 logToUI(`Error uploading ${file.name}: ${e.message}`, 'error');
+                filesFailed++;
+                textFiles.textContent = `Files: ${filesDone} / ${files.length} (${filesFailed} err, ${filesSkipped} skip)`;
+                progressFill.style.width = `${((filesDone + filesFailed + filesSkipped) / files.length) * 100}%`;
+                progressFill.style.background = '#f87171';
             }
         });
 
+        const abortContainer = document.getElementById('aem-360-abort-container');
+        if (abortContainer) abortContainer.style.display = 'none';
+
         logToUI(`==== PROCESS COMPLETED ====`, 'success');
-        logToUI(`Folders: ${foldersDone}/${folders.length} | Files: ${filesDone}/${files.length}`, 'success');
+        if (abortRequested) logToUI(`PROCESS ABORTED BY USER`, 'error');
+        
+        if (filesFailed > 0 || foldersFailed > 0 || filesSkipped > 0) {
+            logToUI(`Folders: ${foldersDone} OK, ${foldersFailed} Errors`, 'error');
+            logToUI(`Files: ${filesDone} OK, ${filesFailed} Errors, ${filesSkipped} Skipped`, 'error');
+        } else {
+            logToUI(`Folders: ${foldersDone}/${folders.length} | Files: ${filesDone}/${files.length}`, 'success');
+        }
         
         const finishBtn = document.getElementById('aem-360-finish-container');
         if (finishBtn) finishBtn.style.display = 'block';
