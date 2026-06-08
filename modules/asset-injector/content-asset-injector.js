@@ -396,6 +396,29 @@ async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
                 throw new Error(`CompleteUpload failed: ${completeResponse.status}`);
             }
             
+            // AUTO-APPROVE ASSET
+            const metadataUrl = `${currentBasePath}/${fileObj.path}/jcr:content/metadata`;
+            const approveFormData = new URLSearchParams();
+            approveFormData.append('./dam:status', 'approved');
+            
+            const approveResponse = await fetch(metadataUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'CSRF-Token': tokenRef.current
+                },
+                body: approveFormData
+            });
+
+            if (!approveResponse.ok) {
+                if (approveResponse.status === 403) {
+                    logToUI(`Token expired (403) on approve for ${fileName}. Auto-refreshing...`, 'warn');
+                    const csrfRes = await fetch('/libs/granite/csrf/token.json');
+                    if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                }
+                throw new Error(`ApproveAsset failed: ${approveResponse.status}`);
+            }
+
             return attempt;
         } catch (error) {
             if (attempt === retries) {
