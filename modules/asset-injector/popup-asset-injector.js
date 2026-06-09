@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (chrome.runtime.lastError) {
                     showStatus("Error: Ensure you are on a valid tab and reload the page.", true);
                 } else if (response && response.success) {
-                    showStatus("Dropzone activated! Return to the AEM tab.");
+                    // Auto-cerrar el popup de la extensión para revelar el Dropzone inyectado en AEM
+                    window.close();
                 } else {
                     showStatus("There was a problem activating the Dropzone.", true);
                 }
