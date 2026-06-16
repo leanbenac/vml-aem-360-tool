@@ -10,7 +10,7 @@
     "webNavigation"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://*.adobeaemcloud.com/*"
   ],
   "action": {
     "default_popup": "core/popup.html",
@@ -22,7 +22,7 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "https://*.adobeaemcloud.com/*"
       ],
       "js": [
         "modules/asset-injector/content-asset-renamer.js",

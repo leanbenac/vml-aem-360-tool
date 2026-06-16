@@ -5,7 +5,18 @@ window.AEM360Renamer = {
     cleanFordName: function(name, locale, preserveHyphens = false) {
         let cleanName = name.toLowerCase();
         if (locale === 'ca') {
-            cleanName = cleanName.replace(/gray/g, 'grey');
+            const caTranslations = {
+                'gray': 'grey',
+                'color': 'colour',
+                'center': 'centre',
+                'tire': 'tyre',
+                'aluminum': 'aluminium',
+                'mold': 'mould',
+                'customize': 'customise'
+            };
+            for (const [us, ca] of Object.entries(caTranslations)) {
+                cleanName = cleanName.replace(new RegExp(us, 'g'), ca);
+            }
         }
         if (cleanName.includes('_')) {
             cleanName = preserveHyphens ? cleanName.replace(/_/g, '-') : cleanName.replace(/_/g, '');
@@ -18,7 +29,7 @@ window.AEM360Renamer = {
         return cleanName;
     },
 
-    processDroppedFiles: function(foldersToCreate, filesToUpload, locale) {
+    processDroppedFiles: function(foldersToCreate, filesToUpload, locale, trimOverride = '') {
         const cleanedFolders = new Set();
         const cleanedFiles = [];
         let renameCount = 0;
@@ -48,20 +59,17 @@ window.AEM360Renamer = {
             let cleanedParentParts = reorderedParts.map((p, index) => {
                 let lowerP = p.toLowerCase();
                 
-                // Model (anything before Trim)
-                if (viewIndex !== -1 && index < viewIndex) {
-                    return p; // Keep original case (e.g. Expedition)
-                }
-                
                 // Trim (the one swapped to viewIndex)
                 if (viewIndex !== -1 && index === viewIndex) {
+                    if (trimOverride) return trimOverride.toLowerCase().replace(/[_ ]/g, '-');
+                    
                     let trim = lowerP.replace(/[_ ]/g, ''); // Remove all spaces and underscores
                     if (trim === 'maxplatinum' || trim === 'platinummax') return 'platinummax';
                     return trim;
                 }
                 
-                // Normal cleaning for colors, wheels, view, device
-                return this.cleanFordName(p, locale, false);
+                // Normal cleaning for colors, wheels, view, device, and Model
+                return this.cleanFordName(p, locale, true);
             });
             let newParentPath = cleanedParentParts.join('/');
             
@@ -81,7 +89,8 @@ window.AEM360Renamer = {
             let newFileName = originalFileName;
             
             if (originalFileName.match(/^0*\d+/)) {
-                let extension = originalFileName.substring(originalFileName.lastIndexOf('.'));
+                let extensionIdx = originalFileName.lastIndexOf('.');
+                let extension = extensionIdx > -1 ? originalFileName.substring(extensionIdx).toLowerCase() : '';
                 let numberMatch = originalFileName.match(/^0*(\d+)/);
                 let numStr = numberMatch[1];
                 let paddedNum = "00" + numStr; // El doble cero obligatorio
