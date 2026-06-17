@@ -4,10 +4,7 @@
   "version": "1.0",
   "description": "Herramienta para inyectar archivos y carpetas con assets en AEM.",
   "permissions": [
-    "storage",
-    "activeTab",
-    "scripting",
-    "webNavigation"
+    "activeTab"
   ],
   "host_permissions": [
     "https://*.adobeaemcloud.com/*"

@@ -6,6 +6,25 @@ console.log('[AEM 360 Tool] Content script injected and waiting for commands.');
 let dropzoneContainer = null;
 let currentBasePath = '';
 
+function h(tag, attrs, ...children) {
+    const el = document.createElement(tag);
+    if (attrs) {
+        for (const [key, value] of Object.entries(attrs)) {
+            if (key === 'style') el.style.cssText = value;
+            else if (key === 'className') el.className = value;
+            else if (key === 'textContent') el.textContent = value;
+            else if (value === true || value === 'true') el.setAttribute(key, '');
+            else el.setAttribute(key, value);
+        }
+    }
+    for (const child of children) {
+        if (!child) continue;
+        if (typeof child === 'string') el.appendChild(document.createTextNode(child));
+        else el.appendChild(child);
+    }
+    return el;
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'ACTIVATE_DROPZONE') {
         const path = request.payload.basePath;
@@ -161,25 +180,6 @@ function injectDropzoneUI() {
     styleEl.textContent = styles;
     document.head.appendChild(styleEl);
 
-    function h(tag, attrs, ...children) {
-        const el = document.createElement(tag);
-        if (attrs) {
-            for (const [key, value] of Object.entries(attrs)) {
-                if (key === 'style') el.style.cssText = value;
-                else if (key === 'className') el.className = value;
-                else if (key === 'textContent') el.textContent = value;
-                else if (value === true || value === 'true') el.setAttribute(key, '');
-                else el.setAttribute(key, value);
-            }
-        }
-        for (const child of children) {
-            if (!child) continue;
-            if (typeof child === 'string') el.appendChild(document.createTextNode(child));
-            else el.appendChild(child);
-        }
-        return el;
-    }
-
     const svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svgIcon.setAttribute("width", "18");
     svgIcon.setAttribute("height", "18");
@@ -205,17 +205,23 @@ function injectDropzoneUI() {
         )
     ));
 
-    dropzoneContainer.appendChild(h('div', { id: 'aem-360-locale-toggle', style: 'background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;' },
-        h('span', { style: 'font-size: 13px; font-weight: 600; color: #94a3b8;', textContent: 'Target Locale:' }),
-        h('div', { style: 'display: flex; gap: 16px;' },
-            h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
-                h('input', { type: 'radio', name: 'aem-locale', value: 'us', checked: true, style: 'accent-color: #38bdf8;' }),
-                ' US (gray)'
-            ),
-            h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
-                h('input', { type: 'radio', name: 'aem-locale', value: 'ca', style: 'accent-color: #38bdf8;' }),
-                ' CA (grey)'
+    dropzoneContainer.appendChild(h('div', { id: 'aem-360-settings-bar', style: 'background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;' },
+        h('div', { style: 'display: flex; align-items: center; gap: 12px;' },
+            h('span', { style: 'font-size: 13px; font-weight: 600; color: #94a3b8;', textContent: 'Locale:' }),
+            h('div', { style: 'display: flex; gap: 12px;' },
+                h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
+                    h('input', { type: 'radio', name: 'aem-locale', value: 'us', checked: true, style: 'accent-color: #38bdf8; margin: 0;' }),
+                    ' US (gray)'
+                ),
+                h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
+                    h('input', { type: 'radio', name: 'aem-locale', value: 'ca', style: 'accent-color: #38bdf8; margin: 0;' }),
+                    ' CA (grey)'
+                )
             )
+        ),
+        h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #e2e8f0;', title: 'Upload files and folders exactly as they are, without renaming them.' },
+            h('input', { type: 'checkbox', id: 'aem-360-bypass-rename', style: 'accent-color: #38bdf8; width: 14px; height: 14px; cursor: pointer; margin: 0;' }),
+            ' Direct Upload'
         )
     ));
 
@@ -303,6 +309,25 @@ function injectDropzoneUI() {
                 dropzoneContainer.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(56, 189, 248, 0.15), 0 0 40px rgba(56, 189, 248, 0.05)';
             }
         });
+    });
+
+    // Bypass Rename Toggle (Disable Locale when Direct Upload is checked)
+    const bypassCheckbox = document.getElementById('aem-360-bypass-rename');
+    const localeLabels = document.querySelectorAll('#aem-360-settings-bar > div > div > label');
+    const localeTitle = document.querySelector('#aem-360-settings-bar > div > span');
+    
+    bypassCheckbox.addEventListener('change', (e) => {
+        const isBypassed = e.target.checked;
+        localeRadios.forEach(radio => {
+            radio.disabled = isBypassed;
+        });
+        localeLabels.forEach(label => {
+            label.style.opacity = isBypassed ? '0.3' : '1';
+            label.style.cursor = isBypassed ? 'not-allowed' : 'pointer';
+        });
+        if (localeTitle) {
+            localeTitle.style.opacity = isBypassed ? '0.3' : '1';
+        }
     });
 
     let isMaximized = false;
@@ -530,8 +555,14 @@ async function handleBrowse(e) {
 function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
     const localeInput = document.querySelector('input[name="aem-locale"]:checked');
     const locale = localeInput ? localeInput.value : 'us';
+    const bypassRename = document.getElementById('aem-360-bypass-rename')?.checked;
+    
     let renameResults = { cleanedFolders: [], cleanedFiles: [], renameCount: 0 };
-    if (window.AEM360Renamer) {
+    if (bypassRename) {
+        logToUI('Info: Skipping renamer. Using original names.', 'info');
+        renameResults.cleanedFolders = Array.from(foldersToCreate);
+        renameResults.cleanedFiles = filesToUpload.map(f => ({ file: f.file, path: f.path, originalPath: f.path }));
+    } else if (window.AEM360Renamer) {
         renameResults = window.AEM360Renamer.processDroppedFiles(foldersToCreate, filesToUpload, locale, '');
     } else {
         logToUI('Warning: Renamer module not found. Proceeding with original names.', 'warn');
@@ -596,31 +627,42 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         if (depth === 0) {
             const style = document.createElement('style');
             style.textContent = `
-                details > summary { list-style: none; }
+                details > summary { 
+                    list-style: none; 
+                    padding: 4px 6px;
+                    border-radius: 4px;
+                    margin-bottom: 2px;
+                    transition: background 0.1s;
+                    display: flex;
+                    align-items: center;
+                }
                 details > summary::-webkit-details-marker { display: none; }
+                details > summary:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                }
                 .tree-input {
                     background: transparent;
-                    border: 1px solid transparent;
+                    border: 1px dashed transparent;
                     color: #e2e8f0;
                     padding: 2px 6px;
                     border-radius: 4px;
                     font-size: 13px;
-                    font-family: monospace;
+                    font-family: 'Segoe UI', system-ui, sans-serif;
                     outline: none;
                     margin-left: 4px;
                     flex: 1;
-                    max-width: 250px;
-                    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+                    transition: all 0.2s;
+                    cursor: text;
                 }
                 .tree-input:hover, .tree-input:focus {
-                    background: rgba(0,0,0,0.4);
-                    border: 1px solid rgba(56, 189, 248, 0.4);
+                    background: rgba(0,0,0,0.3);
+                    border: 1px dashed rgba(56, 189, 248, 0.4);
                     color: #38bdf8;
                 }
                 .tree-child-container {
-                    border-left: 1px solid rgba(255,255,255,0.1);
-                    margin-left: 6px;
-                    padding-left: 14px;
+                    border-left: 1px solid rgba(255, 255, 255, 0.1);
+                    margin-left: 11px;
+                    padding-left: 10px;
                 }
                 .aem-360-custom-scroll::-webkit-scrollbar {
                     width: 6px;
@@ -815,7 +857,10 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 let newName = inputEl ? inputEl.value.trim() : node._name;
                 
                 // Sanitize user input before applying
-                newName = window.AEM360Renamer.cleanFordName(newName, document.querySelector('input[name="aem-locale"]:checked')?.value || 'us', true);
+                const bypassRename = document.getElementById('aem-360-bypass-rename')?.checked;
+                if (!bypassRename && window.AEM360Renamer) {
+                    newName = window.AEM360Renamer.cleanFordName(newName, document.querySelector('input[name="aem-locale"]:checked')?.value || 'us', true);
+                }
                 
                 myPath = currentPath ? `${currentPath}/${newName}` : newName;
                 finalFolders.add(myPath);
