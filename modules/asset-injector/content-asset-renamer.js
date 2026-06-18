@@ -4,18 +4,23 @@
 window.AEM360Renamer = {
     cleanFordName: function(name, locale, preserveHyphens = false) {
         let cleanName = name.toLowerCase();
+        const translations = {
+            'gray': 'grey',
+            'color': 'colour',
+            'center': 'centre',
+            'tire': 'tyre',
+            'aluminum': 'aluminium',
+            'mold': 'mould',
+            'customize': 'customise'
+        };
+
         if (locale === 'ca') {
-            const caTranslations = {
-                'gray': 'grey',
-                'color': 'colour',
-                'center': 'centre',
-                'tire': 'tyre',
-                'aluminum': 'aluminium',
-                'mold': 'mould',
-                'customize': 'customise'
-            };
-            for (const [us, ca] of Object.entries(caTranslations)) {
+            for (const [us, ca] of Object.entries(translations)) {
                 cleanName = cleanName.replace(new RegExp(us, 'g'), ca);
+            }
+        } else if (locale === 'us') {
+            for (const [us, ca] of Object.entries(translations)) {
+                cleanName = cleanName.replace(new RegExp(ca, 'g'), us);
             }
         }
         if (cleanName.includes('_')) {
@@ -33,6 +38,46 @@ window.AEM360Renamer = {
         const cleanedFolders = new Set();
         const cleanedFiles = [];
         let renameCount = 0;
+
+        // FIRST PASS: Identify colors and calculate truncations
+        const colorOriginals = new Set();
+        filesToUpload.forEach(fileObj => {
+            let pathParts = fileObj.path.split('/');
+            let devIdx = pathParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
+            if (devIdx !== -1) {
+                for (let i = devIdx + 1; i < pathParts.length - 1; i++) {
+                    let p = pathParts[i].toLowerCase();
+                    if (p !== 'exterior' && p !== 'interior') {
+                        colorOriginals.add(this.cleanFordName(p, locale, true));
+                        break;
+                    }
+                }
+            }
+        });
+
+        const colorMap = {}; 
+        const wordCounts = {}; 
+        for (let c of colorOriginals) {
+            let parts = c.split('-');
+            if (parts.length > 2) {
+                let twoWords = parts.slice(0, 2).join('-');
+                if (!wordCounts[twoWords]) wordCounts[twoWords] = [];
+                wordCounts[twoWords].push(c);
+            } else {
+                colorMap[c] = c;
+            }
+        }
+        for (let c of colorOriginals) {
+            if (!colorMap[c]) {
+                let parts = c.split('-');
+                let twoWords = parts.slice(0, 2).join('-');
+                if (wordCounts[twoWords].length > 1) {
+                    colorMap[c] = parts.slice(0, 3).join('-');
+                } else {
+                    colorMap[c] = twoWords;
+                }
+            }
+        }
 
         filesToUpload.forEach(fileObj => {
             let pathParts = fileObj.path.split('/');
@@ -69,12 +114,16 @@ window.AEM360Renamer = {
                 }
                 
                 // Normal cleaning for colors, wheels, view, device, and Model
-                return this.cleanFordName(p, locale, true);
+                let cleaned = this.cleanFordName(p, locale, true);
+                return colorMap[cleaned] ? colorMap[cleaned] : cleaned;
             });
             let newParentPath = cleanedParentParts.join('/');
             
             // 2b. Clean parts for the file suffix (files get hyphens if needed)
-            let suffixParentParts = reorderedParts.map(p => this.cleanFordName(p, locale, true));
+            let suffixParentParts = reorderedParts.map(p => {
+                let cleaned = this.cleanFordName(p, locale, true);
+                return colorMap[cleaned] ? colorMap[cleaned] : cleaned;
+            });
             
             // 3. Add to cleanedFolders set (including all ancestors)
             if (newParentPath) {
@@ -90,7 +139,7 @@ window.AEM360Renamer = {
             
             if (originalFileName.match(/^0*\d+/)) {
                 let extensionIdx = originalFileName.lastIndexOf('.');
-                let extension = extensionIdx > -1 ? originalFileName.substring(extensionIdx).toLowerCase() : '';
+                let extension = extensionIdx > -1 ? '.jpeg' : '';
                 let numberMatch = originalFileName.match(/^0*(\d+)/);
                 let numStr = numberMatch[1];
                 let paddedNum = "00" + numStr; // El doble cero obligatorio
@@ -101,10 +150,10 @@ window.AEM360Renamer = {
                 let suffixParts = [];
                 if (deviceIndex !== -1 && deviceIndex < suffixParentParts.length - 1) {
                     // Combine everything after the device folder using the hyphenated parts
-                    suffixParts = suffixParentParts.slice(deviceIndex + 1);
+                    suffixParts = suffixParentParts.slice(deviceIndex + 1).filter(p => p !== 'exterior' && p !== 'interior');
                 } else if (suffixParentParts.length > 0) {
                     // Fallback to leaf folder
-                    suffixParts = [suffixParentParts[suffixParentParts.length - 1]];
+                    suffixParts = [suffixParentParts[suffixParentParts.length - 1]].filter(p => p !== 'exterior' && p !== 'interior');
                 }
                 
                 let suffix = suffixParts.join('-');
@@ -113,8 +162,8 @@ window.AEM360Renamer = {
                 // Not a numeric image sequence, just clean its name
                 let extensionIdx = originalFileName.lastIndexOf('.');
                 let baseName = extensionIdx > -1 ? originalFileName.substring(0, extensionIdx) : originalFileName;
-                let ext = extensionIdx > -1 ? originalFileName.substring(extensionIdx) : '';
-                newFileName = this.cleanFordName(baseName, locale, true) + ext.toLowerCase();
+                let ext = extensionIdx > -1 ? '.jpeg' : '';
+                newFileName = this.cleanFordName(baseName, locale, true) + ext;
             }
 
             const newFullPath = newParentPath ? `${newParentPath}/${newFileName}` : newFileName;

@@ -808,8 +808,10 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         const finalFolders = new Set();
         const finalFiles = [];
         
-        function traverseAndBuild(node, currentPath) {
+        function traverseAndBuild(node, currentPath, pathKeys = []) {
             let myPath = currentPath;
+            let currentPathKeys = [...pathKeys];
+            
             if (node._id) {
                 const inputEl = document.getElementById(node._id);
                 let newName = inputEl ? inputEl.value.trim() : node._name;
@@ -817,13 +819,26 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 // Sanitize user input before applying
                 newName = window.AEM360Renamer.cleanFordName(newName, document.querySelector('input[name="aem-locale"]:checked')?.value || 'us', true);
                 
+                currentPathKeys.push({ old: node._name, new: newName });
+                
                 myPath = currentPath ? `${currentPath}/${newName}` : newName;
                 finalFolders.add(myPath);
             }
             
             if (node._info) {
                 node._info.allFiles.forEach(f => {
-                    let newFilePath = myPath ? `${myPath}/${f.new}` : f.new;
+                    let finalFileName = f.new;
+                    
+                    // Apply renames to file name suffix
+                    let sortedKeys = [...currentPathKeys].sort((a, b) => b.old.length - a.old.length);
+                    sortedKeys.forEach(k => {
+                        if (k.old && k.old !== k.new) {
+                            let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
+                            finalFileName = finalFileName.replace(regex, k.new);
+                        }
+                    });
+                    
+                    let newFilePath = myPath ? `${myPath}/${finalFileName}` : finalFileName;
                     finalFiles.push({
                         file: f.fileObj,
                         path: newFilePath,
@@ -833,11 +848,11 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             }
             
             Object.values(node._children).forEach(child => {
-                traverseAndBuild(child, myPath);
+                traverseAndBuild(child, myPath, currentPathKeys);
             });
         }
         
-        traverseAndBuild(tree, '');
+        traverseAndBuild(tree, '', []);
         
         const sortedFolders = Array.from(finalFolders).sort((a, b) => a.split('/').length - b.split('/').length);
         
