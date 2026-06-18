@@ -139,7 +139,8 @@ window.AEM360Renamer = {
             
             if (originalFileName.match(/^0*\d+/)) {
                 let extensionIdx = originalFileName.lastIndexOf('.');
-                let extension = extensionIdx > -1 ? '.jpeg' : '';
+                let originalExt = extensionIdx > -1 ? originalFileName.substring(extensionIdx).toLowerCase() : '';
+                let extension = originalExt === '.jpg' ? '.jpeg' : originalExt;
                 let numberMatch = originalFileName.match(/^0*(\d+)/);
                 let numStr = numberMatch[1];
                 let paddedNum = "00" + numStr; // El doble cero obligatorio
@@ -156,7 +157,8 @@ window.AEM360Renamer = {
                 // Not a numeric image sequence, just clean its name
                 let extensionIdx = originalFileName.lastIndexOf('.');
                 let baseName = extensionIdx > -1 ? originalFileName.substring(0, extensionIdx) : originalFileName;
-                let ext = extensionIdx > -1 ? '.jpeg' : '';
+                let originalExt = extensionIdx > -1 ? originalFileName.substring(extensionIdx).toLowerCase() : '';
+                let ext = originalExt === '.jpg' ? '.jpeg' : originalExt;
                 newFileName = this.cleanFordName(baseName, locale, true) + ext;
             }
 

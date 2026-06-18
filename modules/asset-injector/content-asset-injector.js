@@ -1133,13 +1133,13 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
             return;
         }
 
-        logToUI('Starting folder creation (Concurrency: 5)...', 'info');
+        logToUI('Starting folder creation (Concurrency: 10)...', 'info');
         let foldersDone = 0;
         let foldersFailed = 0;
         const failedFoldersSet = new Set();
         textFolders.textContent = `Folders: 0 / ${folders.length}`;
         
-        await promisePool(folders, 5, async (folder) => {
+        await promisePool(folders, 10, async (folder) => {
             if (abortRequested) return;
 
             let targetPath = `${currentBasePath}/${folder}`.replace(/\/\//g, '/');
@@ -1204,7 +1204,7 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
             textFolders.textContent = `Folders: ${foldersDone} / ${folders.length}` + (foldersFailed ? ` (${foldersFailed} err)` : '');
         });
 
-        logToUI('Starting file upload (Concurrency: 5)...', 'info');
+        logToUI('Starting file upload (Concurrency: 10)...', 'info');
         
         // Sort files by directory first, then numerically by filename to upload sequentially per folder
         files.sort((a, b) => {
@@ -1225,7 +1225,7 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
         let filesSkipped = 0;
         textFiles.textContent = `Files: 0 / ${files.length}`;
         
-        await promisePool(files, 5, async (fileObj) => {
+        await promisePool(files, 10, async (fileObj) => {
             if (abortRequested) {
                 filesSkipped++;
                 textFiles.textContent = `Files: ${filesDone} / ${files.length} (${filesFailed} err, ${filesSkipped} skip)`;
@@ -1315,6 +1315,8 @@ async function promisePool(items, limit, fn) {
         while (i < items.length) {
             const item = items[i++];
             try {
+                const delayMs = Math.floor(Math.random() * 31) + 20; // Jitter 20-50ms
+                await new Promise(res => setTimeout(res, delayMs));
                 await fn(item);
             } catch (e) {
                 console.error('PromisePool item failed:', e);
