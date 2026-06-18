@@ -620,6 +620,38 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         });
     });
 
+    function updatePreviews() {
+        function simulateTraverse(n, pathKeys = []) {
+            let currentPathKeys = [...pathKeys];
+            if (n._id) {
+                const inputEl = document.getElementById(n._id);
+                let newName = inputEl ? inputEl.value.trim() : n._name;
+                newName = window.AEM360Renamer.cleanFordName(newName, document.querySelector('input[name="aem-locale"]:checked')?.value || 'us', true);
+                currentPathKeys.push({ old: n._name, new: newName });
+            }
+            if (n._info) {
+                n._info.allFiles.forEach(f => {
+                    let finalFileName = f.new;
+                    let sortedKeys = [...currentPathKeys].sort((a, b) => b.old.length - a.old.length);
+                    sortedKeys.forEach(k => {
+                        if (k.old && k.old !== k.new) {
+                            let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
+                            finalFileName = finalFileName.replace(regex, k.new);
+                        }
+                    });
+                    if (f._uiNewSpan) {
+                        f._uiNewSpan.textContent = finalFileName;
+                        if (f._uiUpdateVisibility) f._uiUpdateVisibility();
+                    }
+                });
+            }
+            Object.values(n._children).forEach(child => {
+                simulateTraverse(child, currentPathKeys);
+            });
+        }
+        simulateTraverse(tree, []);
+    }
+
     // Render Tree Recursively using Interactive <details> tags and inputs
     let nodeIdCounter = 0;
     function renderTree(node, depth = 0) {
@@ -710,6 +742,10 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             input.addEventListener('click', e => e.stopPropagation());
             input.addEventListener('keydown', e => e.stopPropagation());
             input.addEventListener('keyup', e => e.stopPropagation());
+            input.addEventListener('input', e => {
+                e.stopPropagation();
+                updatePreviews();
+            });
             
             summary.appendChild(folderIconSvg);
             summary.appendChild(input);
@@ -753,26 +789,37 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                     dot.textContent = '•';
                     fDiv.appendChild(dot);
                     
-                    if (f.orig !== f.new) {
+                    if (true) {
                         const origSpan = document.createElement('span');
-                        origSpan.style.cssText = 'text-decoration: line-through; color: #f87171; opacity: 0.8;';
                         origSpan.textContent = f.orig;
-                        fDiv.appendChild(origSpan);
                         
                         const arrowSpan = document.createElement('span');
-                        arrowSpan.style.cssText = 'color: #10b981; font-weight: bold;';
                         arrowSpan.textContent = '➔';
-                        fDiv.appendChild(arrowSpan);
                         
                         const newSpan = document.createElement('span');
-                        newSpan.style.cssText = 'color: #34d399; font-weight: bold;';
                         newSpan.textContent = f.new;
-                        fDiv.appendChild(newSpan);
-                    } else {
-                        const origSpan = document.createElement('span');
-                        origSpan.style.color = '#cbd5e1';
-                        origSpan.textContent = f.orig;
+                        
+                        f._uiOrigSpan = origSpan;
+                        f._uiArrowSpan = arrowSpan;
+                        f._uiNewSpan = newSpan;
+                        
+                        function updateVisibility() {
+                            if (origSpan.textContent !== newSpan.textContent) {
+                                origSpan.style.cssText = 'text-decoration: line-through; color: #f87171; opacity: 0.8;';
+                                arrowSpan.style.cssText = 'color: #10b981; font-weight: bold; margin: 0 4px; display: inline;';
+                                newSpan.style.cssText = 'color: #34d399; font-weight: bold; display: inline;';
+                            } else {
+                                origSpan.style.cssText = 'color: #cbd5e1; text-decoration: none; opacity: 1;';
+                                arrowSpan.style.cssText = 'display: none;';
+                                newSpan.style.cssText = 'display: none;';
+                            }
+                        }
+                        updateVisibility();
+                        f._uiUpdateVisibility = updateVisibility;
+                        
                         fDiv.appendChild(origSpan);
+                        fDiv.appendChild(arrowSpan);
+                        fDiv.appendChild(newSpan);
                     }
                     fileListContainer.appendChild(fDiv);
                 });
@@ -1268,11 +1315,6 @@ async function promisePool(items, limit, fn) {
         while (i < items.length) {
             const item = items[i++];
             try {
-                // Pequeño delay aleatorio (jitter) entre 300ms y 800ms para evitar
-                // ráfagas de peticiones concurrentes y no ser bloqueados por el WAF.
-                const delay = Math.floor(Math.random() * 500) + 300;
-                await new Promise(res => setTimeout(res, delay));
-
                 await fn(item);
             } catch (e) {
                 console.error('PromisePool item failed:', e);
