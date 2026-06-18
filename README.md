@@ -12,6 +12,7 @@
 - **Escudo Anti-Siesta (Keep-Alive):** Al iniciar una carga masiva (ej. miles de imágenes), la extensión utiliza la API `WakeLock` del navegador para evitar que la pantalla de la computadora se apague o entre en suspensión, garantizando que el proceso de red no se interrumpa.
 - **Seguridad Integrada:** Extrae y utiliza automáticamente el Token CSRF de tu sesión activa de AEM, asegurando que todas las peticiones estén autenticadas y autorizadas. Además, cuenta con validaciones anti-escape de rutas para evitar subidas accidentales fuera de la carpeta destino.
 - **Interfaz Bilingüe / UI en Inglés:** Si bien el soporte técnico es en español, toda la interfaz de usuario de la extensión está completamente en inglés para facilitar su uso global por cualquier equipo de VML.
+- **Renombrado y Normalización Inteligente:** La herramienta normaliza automáticamente las rutas y archivos, adaptando variaciones regionales de texto (US/CA como `gray`/`grey`), simplificando nombres compuestos de colores y forzando la extensión de las imágenes a `.jpeg` de forma automatizada para unificar el formato.
 
 ## 🛠️ Instalación (Modo Desarrollador)
 
