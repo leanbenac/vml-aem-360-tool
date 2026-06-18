@@ -147,14 +147,8 @@ window.AEM360Renamer = {
                 // Find device folder ('desktop', 'mobile', 'tablet') to know where the suffix starts
                 let deviceIndex = cleanedParentParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p));
                 
-                let suffixParts = [];
-                if (deviceIndex !== -1 && deviceIndex < suffixParentParts.length - 1) {
-                    // Combine everything after the device folder using the hyphenated parts
-                    suffixParts = suffixParentParts.slice(deviceIndex + 1).filter(p => p !== 'exterior' && p !== 'interior');
-                } else if (suffixParentParts.length > 0) {
-                    // Fallback to leaf folder
-                    suffixParts = [suffixParentParts[suffixParentParts.length - 1]].filter(p => p !== 'exterior' && p !== 'interior');
-                }
+                let startIndex = deviceIndex !== -1 ? deviceIndex + 1 : 0;
+                let suffixParts = suffixParentParts.slice(startIndex).filter(p => p !== 'exterior' && p !== 'interior');
                 
                 let suffix = suffixParts.join('-');
                 newFileName = suffix ? `${paddedNum}-${suffix}${extension}` : `${paddedNum}${extension}`;
