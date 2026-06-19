@@ -47,4 +47,4 @@ La extensión cumple estrictamente con los estándares corporativos recomendados
 4. **Permisos Mínimos**: Utiliza exclusivamente los permisos estrictamente necesarios (`scripting` y permisos de *host* limitados) para comunicarse con la pestaña activa, minimizando la superficie de ataque.
 
 ---
-**Desarrollado con ❤️ por el Engineering Team de VML Argentina.**
+**Desarrollado con ❤️ por el Automation Squad de VML Argentina.**
