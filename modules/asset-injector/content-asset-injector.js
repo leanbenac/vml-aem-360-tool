@@ -5,6 +5,36 @@ console.log('[AEM 360 Tool] Content script injected and waiting for commands.');
 
 let dropzoneContainer = null;
 let currentBasePath = '';
+let tokenRefreshPromise = null;
+
+async function getValidToken(tokenRef, contextStr) {
+    if (tokenRefreshPromise) {
+        logToUI(`Waiting for existing token refresh (${contextStr})...`, 'info');
+        await tokenRefreshPromise;
+        return;
+    }
+    
+    logToUI(`Token expired (403) during ${contextStr}. Auto-refreshing...`, 'warn');
+    tokenRefreshPromise = (async () => {
+        try {
+            const csrfRes = await fetch('/libs/granite/csrf/token.json');
+            if (csrfRes.ok) {
+                const json = await csrfRes.json();
+                tokenRef.current = json.token;
+                logToUI(`Token successfully refreshed.`, 'success');
+            } else {
+                throw new Error('Failed to fetch new token');
+            }
+        } catch (e) {
+            logToUI(`Error refreshing token: ${e.message}`, 'error');
+            throw e;
+        } finally {
+            tokenRefreshPromise = null;
+        }
+    })();
+    
+    await tokenRefreshPromise;
+}
 
 function h(tag, attrs, ...children) {
     const el = document.createElement(tag);
@@ -225,7 +255,7 @@ function injectDropzoneUI() {
         )
     ));
 
-    dropzoneContainer.appendChild(h('div', { style: 'background: rgba(15, 23, 42, 0.4); padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);' },
+    dropzoneContainer.appendChild(h('div', { id: 'aem-360-top-destination', style: 'display: none; background: rgba(15, 23, 42, 0.4); padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);' },
         h('div', { style: 'font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); word-break: break-all;' },
             h('span', { style: 'color: #64748b; font-weight: 600;', textContent: 'DESTINATION: ' }),
             h('span', { style: 'font-family: monospace; color: #a3e635;', textContent: currentBasePath })
@@ -279,7 +309,7 @@ function injectDropzoneUI() {
         )
     ));
 
-    dropzoneContainer.appendChild(h('div', { id: 'aem-360-logs', className: 'aem-360-custom-scroll', textContent: 'Waiting for files...' }));
+    dropzoneContainer.appendChild(h('div', { id: 'aem-360-logs', className: 'aem-360-custom-scroll', style: 'display: none;', textContent: 'Waiting for files...' }));
     
     dropzoneContainer.appendChild(h('div', { id: 'aem-360-finish-container', style: 'display: none; padding: 10px; background: #0f172a; border-top: 1px solid #334155;' },
         h('button', { id: 'aem-360-finish-btn', style: 'width: 100%; padding: 8px; background: #38bdf8; color: #0f172a; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;', textContent: 'Finish Upload and Close' })
@@ -855,11 +885,12 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         reviewList.appendChild(treeContainer);
     }
     
-    document.getElementById('aem-360-review-count').textContent = `${cleanedFiles.length} items (Edit folder names if needed)`;
+    document.getElementById('aem-360-review-count').textContent = `${cleanedFolders.length} folders, ${cleanedFiles.length} files (Edit folder names if needed)`;
     
     // Swap UI
     document.getElementById('aem-360-drop-area').style.display = 'none';
     document.getElementById('aem-360-review-container').style.display = 'flex';
+    document.getElementById('aem-360-top-destination').style.display = 'block';
 
     // Button Handlers
     const btnCancel = document.getElementById('aem-360-cancel-review-btn');
@@ -867,6 +898,7 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
 
     btnCancel.onclick = () => {
         document.getElementById('aem-360-review-container').style.display = 'none';
+        document.getElementById('aem-360-top-destination').style.display = 'none';
         
         const spinner = document.getElementById('aem-360-scanning-spinner');
         if (spinner) spinner.remove();
@@ -889,6 +921,7 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         
         const logsEl = document.getElementById('aem-360-logs');
         if (logsEl) {
+            logsEl.style.display = 'block';
             logsEl.style.height = 'auto';
             logsEl.style.flex = '1';
         }
@@ -984,9 +1017,7 @@ async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
 
             if (!initResponse.ok) {
                 if (initResponse.status === 403) {
-                    logToUI(`Token expired (403) during ${fileName}. Auto-refreshing...`, 'warn');
-                    const csrfRes = await fetch('/libs/granite/csrf/token.json');
-                    if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                    await getValidToken(tokenRef, fileName);
                 }
                 throw new Error(`InitiateUpload failed: ${initResponse.status}`);
             }
@@ -1040,9 +1071,7 @@ async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
 
             if (!completeResponse.ok) {
                 if (completeResponse.status === 403) {
-                    logToUI(`Token expired (403) on complete for ${fileName}. Auto-refreshing...`, 'warn');
-                    const csrfRes = await fetch('/libs/granite/csrf/token.json');
-                    if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                    await getValidToken(tokenRef, fileName + ' (complete)');
                 }
                 throw new Error(`CompleteUpload failed: ${completeResponse.status}`);
             }
@@ -1063,9 +1092,7 @@ async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
 
             if (!approveResponse.ok) {
                 if (approveResponse.status === 403) {
-                    logToUI(`Token expired (403) on approve for ${fileName}. Auto-refreshing...`, 'warn');
-                    const csrfRes = await fetch('/libs/granite/csrf/token.json');
-                    if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                    await getValidToken(tokenRef, fileName + ' (approve)');
                 }
                 throw new Error(`ApproveAsset failed: ${approveResponse.status}`);
             }
@@ -1179,8 +1206,7 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
                         break;
                     } else if (res.status === 403) {
                         logToUI(`Token expired (403) while creating folder ${folder}. Auto-refreshing...`, 'warn');
-                        const csrfRes = await fetch('/libs/granite/csrf/token.json');
-                        if (csrfRes.ok) tokenRef.current = (await csrfRes.json()).token;
+                        await getValidToken(tokenRef, folder + ' (folder)');
                         throw new Error(`Folder creation failed: 403`);
                     }
                 } catch (e) {
