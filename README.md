@@ -25,6 +25,8 @@ Para recrear una estructura de **256 carpetas** y subir **4200 imágenes** (apro
   - Subir las imágenes en lote (drag & drop por carpeta) y esperar: ~1 min por carpeta = 256 min.
   - Seleccionar los assets del lote, editar metadata y aprobar: ~1 min por lote = 256 min.
   - **Total:** ~704 minutos (**cerca de 12 horas o 1.5 días laborales completos** de trabajo repetitivo).
+  
+  *(Nota: A este cálculo habría que sumarle el tiempo de revisión, renombrado y normalización de los 4200 archivos previo a la carga, lo cual incrementaría drásticamente las horas de trabajo manual).*
 - **VML AEM 360 Tool:**
   - El proceso de análisis y subida concurrente de todo el árbol se resuelve en **apenas unos minutos** (aprox. 10 a 15 min dependiendo de la red) y de forma 100% automatizada.
 
