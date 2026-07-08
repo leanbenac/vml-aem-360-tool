@@ -56,6 +56,15 @@ Para instalar la extensión en tu navegador Chrome (o Edge/Brave basados en Chro
 - **Cuidado con la Ruta Destino:** Asegurate de escribir correctamente la ruta base en el popup. La herramienta no cuenta con "Memoria de Ruta" por motivos de seguridad; esto fuerza a cada operador a confirmar conscientemente el destino de los archivos antes de cada carga para evitar inyecciones en proyectos ajenos.
 - **Red:** Si vas a subir miles de archivos pesados, asegurate de tener una conexión a internet estable. Si ocurre un microcorte, la consola integrada te mostrará qué archivos específicos fallaron para que puedas reintentarlos.
 
+## 🧪 Pruebas Unitarias (Unit Tests)
+
+El proyecto cuenta con una suite de pruebas unitarias integradas para validar la lógica del procesador y renombrador de archivos (incluyendo la conversión regional de locale y mapeo de extensiones de imagen).
+
+Para correr las pruebas unitarias en tu entorno local, ejecutá el siguiente comando en la terminal:
+```bash
+node --test test/content-asset-renamer.test.js
+```
+
 ## 🛡️ Seguridad y Privacidad (AppSec)
 
 La extensión cumple estrictamente con los estándares corporativos recomendados para **Manifest V3**:

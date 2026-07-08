@@ -6,6 +6,10 @@ console.log('[AEM 360 Tool] Content script injected and waiting for commands.');
 let dropzoneContainer = null;
 let currentBasePath = '';
 let tokenRefreshPromise = null;
+let currentScannedFolders = null;
+let currentScannedFiles = null;
+let folderInversionStates = {};
+let allInverted = false;
 
 async function getValidToken(tokenRef, contextStr) {
     if (tokenRefreshPromise) {
@@ -59,7 +63,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'ACTIVATE_DROPZONE') {
         const path = request.payload.basePath;
         if (!path.startsWith('/content/dam/')) {
-            alert('AEM 360 Error: La ruta destino debe comenzar obligatoriamente con /content/dam/');
+            alert('AEM 360 Error: The destination path must start with /content/dam/');
             sendResponse({ success: false });
             return;
         }
@@ -203,7 +207,20 @@ function injectDropzoneUI() {
         }
 
         .aem-360-log-success { color: #10b981; }
-        .aem-360-log-warn { color: #f59e0b; } /* Orange para avisos */
+        .aem-360-log-warn { color: #f59e0b; } /* Orange for warnings */
+
+        #aem-360-invert-all-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        #aem-360-invert-all-btn:hover { background: rgba(56, 189, 248, 0.08) !important; }
+        #aem-360-invert-all-btn:active { transform: scale(0.98); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
     `;
 
     const styleEl = document.createElement('style');
@@ -235,24 +252,41 @@ function injectDropzoneUI() {
         )
     ));
 
-    dropzoneContainer.appendChild(h('div', { id: 'aem-360-settings-bar', style: 'background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;' },
-        h('div', { style: 'display: flex; align-items: center; gap: 12px;' },
-            h('span', { style: 'font-size: 13px; font-weight: 600; color: #94a3b8;', textContent: 'Locale:' }),
-            h('div', { style: 'display: flex; gap: 12px;' },
-                h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
-                    h('input', { type: 'radio', name: 'aem-locale', value: 'us', checked: true, style: 'accent-color: #38bdf8; margin: 0;' }),
-                    ' US (gray)'
-                ),
-                h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
-                    h('input', { type: 'radio', name: 'aem-locale', value: 'ca', style: 'accent-color: #38bdf8; margin: 0;' }),
-                    ' CA (grey)'
+    dropzoneContainer.appendChild(h('div', { id: 'aem-360-settings-bar', style: 'background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 12px 20px; display: flex; flex-direction: column; gap: 12px;' },
+        h('div', { style: 'display: flex; align-items: center; justify-content: space-between; width: 100%;' },
+            h('div', { id: 'aem-360-locale-group', style: 'display: flex; align-items: center; gap: 12px;' },
+                h('span', { style: 'font-size: 13px; font-weight: 600; color: #94a3b8;', textContent: 'Locale:' }),
+                h('div', { style: 'display: flex; gap: 12px;' },
+                    h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
+                        h('input', { type: 'radio', name: 'aem-locale', value: 'us', checked: true, style: 'accent-color: #38bdf8; margin: 0;' }),
+                        ' US (gray)'
+                    ),
+                    h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
+                        h('input', { type: 'radio', name: 'aem-locale', value: 'ca', style: 'accent-color: #38bdf8; margin: 0;' }),
+                        ' CA (grey)'
+                    )
+                )
+            ),
+            h('div', { id: 'aem-360-ext-group', style: 'display: flex; align-items: center; gap: 12px;' },
+                h('span', { style: 'font-size: 13px; font-weight: 600; color: #94a3b8;', textContent: 'Extension:' }),
+                h('div', { style: 'display: flex; gap: 12px;' },
+                    h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
+                        h('input', { type: 'radio', name: 'aem-ext', value: 'jpeg', checked: true, style: 'accent-color: #38bdf8; margin: 0;' }),
+                        ' .jpeg'
+                    ),
+                    h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #e2e8f0;' },
+                        h('input', { type: 'radio', name: 'aem-ext', value: 'jpg', style: 'accent-color: #38bdf8; margin: 0;' }),
+                        ' .jpg'
+                    )
                 )
             )
         ),
-        h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #e2e8f0;', title: 'Upload files and folders exactly as they are, without renaming them.' },
-            h('input', { type: 'checkbox', id: 'aem-360-bypass-rename', style: 'accent-color: #38bdf8; width: 14px; height: 14px; cursor: pointer; margin: 0;' }),
-            ' Direct Upload'
-        )
+        h('button', {
+            id: 'aem-360-invert-all-btn',
+            type: 'button',
+            style: 'background: transparent; border: 1px solid #38bdf8; border-radius: 6px; color: #38bdf8; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; width: 100%; text-align: center;',
+            textContent: 'Invert All Numeration'
+        })
     ));
 
     dropzoneContainer.appendChild(h('div', { id: 'aem-360-top-destination', style: 'display: none; background: rgba(15, 23, 42, 0.4); padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);' },
@@ -341,24 +375,53 @@ function injectDropzoneUI() {
         });
     });
 
-    // Bypass Rename Toggle (Disable Locale when Direct Upload is checked)
-    const bypassCheckbox = document.getElementById('aem-360-bypass-rename');
-    const localeLabels = document.querySelectorAll('#aem-360-settings-bar > div > div > label');
-    const localeTitle = document.querySelector('#aem-360-settings-bar > div > span');
-    
-    bypassCheckbox.addEventListener('change', (e) => {
-        const isBypassed = e.target.checked;
-        localeRadios.forEach(radio => {
-            radio.disabled = isBypassed;
+    // Real-time Update on setting changes
+    const settingsRadios = document.querySelectorAll('input[name="aem-locale"], input[name="aem-ext"]');
+    settingsRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (currentScannedFolders && currentScannedFiles) {
+                const dropArea = document.getElementById('aem-360-drop-area');
+                finalizeAnalysis(currentScannedFolders, currentScannedFiles, dropArea);
+            }
         });
-        localeLabels.forEach(label => {
-            label.style.opacity = isBypassed ? '0.3' : '1';
-            label.style.cursor = isBypassed ? 'not-allowed' : 'pointer';
-        });
-        if (localeTitle) {
-            localeTitle.style.opacity = isBypassed ? '0.3' : '1';
-        }
     });
+
+    // Global Inversion Button click listener
+    const invertAllBtn = document.getElementById('aem-360-invert-all-btn');
+    if (invertAllBtn) {
+        invertAllBtn.addEventListener('click', () => {
+            allInverted = !allInverted;
+            
+            // Update button styling
+            if (allInverted) {
+                invertAllBtn.style.background = '#38bdf8';
+                invertAllBtn.style.color = '#0f172a';
+                invertAllBtn.textContent = 'Numeration Inverted ✓';
+            } else {
+                invertAllBtn.style.background = 'transparent';
+                invertAllBtn.style.color = '#38bdf8';
+                invertAllBtn.textContent = 'Invert All Numeration';
+            }
+            
+            if (currentScannedFiles) {
+                // Apply global state to all currently scanned folders
+                const folderKeys = new Set();
+                currentScannedFiles.forEach(f => {
+                    let origParent = f.path.includes('/') ? f.path.substring(0, f.path.lastIndexOf('/')) : '';
+                    folderKeys.add(origParent);
+                });
+                folderKeys.forEach(key => {
+                    folderInversionStates[key] = allInverted;
+                });
+                
+                // Re-run analysis to update preview UI
+                const dropArea = document.getElementById('aem-360-drop-area');
+                finalizeAnalysis(currentScannedFolders, currentScannedFiles, dropArea);
+            }
+        });
+    }
+
+
 
     let isMaximized = false;
     document.getElementById('aem-360-maximize').addEventListener('click', () => {
@@ -537,6 +600,8 @@ async function handleDrop(e) {
         if (item) await traverseFileTree(item);
     }
 
+    currentScannedFolders = foldersToCreate;
+    currentScannedFiles = filesToUpload;
     logToUI(`Analysis complete: ${foldersToCreate.size} folders, ${filesToUpload.length} files.`, 'success');
     finalizeAnalysis(foldersToCreate, filesToUpload, dropArea);
 }
@@ -578,22 +643,29 @@ async function handleBrowse(e) {
         }
     }
 
+    currentScannedFolders = foldersToCreate;
+    currentScannedFiles = filesToUpload;
     logToUI(`Analysis complete: ${foldersToCreate.size} folders, ${filesToUpload.length} files.`, 'success');
     finalizeAnalysis(foldersToCreate, filesToUpload, dropArea);
 }
 
 function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
-    const localeInput = document.querySelector('input[name="aem-locale"]:checked');
+    const localeInput = dropzoneContainer ? dropzoneContainer.querySelector('input[name="aem-locale"]:checked') : null;
     const locale = localeInput ? localeInput.value : 'us';
-    const bypassRename = document.getElementById('aem-360-bypass-rename')?.checked;
+    const extInput = dropzoneContainer ? dropzoneContainer.querySelector('input[name="aem-ext"]:checked') : null;
+    const extOption = extInput ? extInput.value : 'jpeg';
     
+    // Ensure all folders have an inversion state, defaulting to the global allInverted state if not set
+    filesToUpload.forEach(f => {
+        let origParent = f.path.includes('/') ? f.path.substring(0, f.path.lastIndexOf('/')) : '';
+        if (folderInversionStates[origParent] === undefined) {
+            folderInversionStates[origParent] = allInverted;
+        }
+    });
+
     let renameResults = { cleanedFolders: [], cleanedFiles: [], renameCount: 0 };
-    if (bypassRename) {
-        logToUI('Info: Skipping renamer. Using original names.', 'info');
-        renameResults.cleanedFolders = Array.from(foldersToCreate);
-        renameResults.cleanedFiles = filesToUpload.map(f => ({ file: f.file, path: f.path, originalPath: f.path }));
-    } else if (window.AEM360Renamer) {
-        renameResults = window.AEM360Renamer.processDroppedFiles(foldersToCreate, filesToUpload, locale, '');
+    if (window.AEM360Renamer) {
+        renameResults = window.AEM360Renamer.processDroppedFiles(foldersToCreate, filesToUpload, locale, '', extOption, folderInversionStates);
     } else {
         logToUI('Warning: Renamer module not found. Proceeding with original names.', 'warn');
         renameResults.cleanedFolders = Array.from(foldersToCreate);
@@ -656,7 +728,7 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             if (n._id) {
                 const inputEl = document.getElementById(n._id);
                 let newName = inputEl ? inputEl.value.trim() : n._name;
-                newName = window.AEM360Renamer.cleanFordName(newName, document.querySelector('input[name="aem-locale"]:checked')?.value || 'us', true);
+                newName = window.AEM360Renamer.cleanFordName(newName, (dropzoneContainer && dropzoneContainer.querySelector('input[name="aem-locale"]:checked')?.value) || 'us', true);
                 currentPathKeys.push({ old: n._name, new: newName });
             }
             if (n._info) {
@@ -801,9 +873,38 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 
                 const fileSummarySpan = document.createElement('span');
                 fileSummarySpan.style.cssText = 'font-size: 10px; color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;';
-                fileSummarySpan.textContent = `Ver ${info.filesCount} archivos ▼`;
-                
+                fileSummarySpan.textContent = `View ${info.filesCount} files ▼`;
                 fileSummary.appendChild(fileSummarySpan);
+
+                const hasSequence = info.allFiles.some(f => f.orig.match(/^0*\d+/));
+                if (hasSequence) {
+                    const origParentFolder = info.allFiles[0].originalPath.includes('/') ? info.allFiles[0].originalPath.substring(0, info.allFiles[0].originalPath.lastIndexOf('/')) : '';
+                    const isFolderInverted = !!folderInversionStates[origParentFolder];
+                    
+                    const invertFolderBtn = document.createElement('button');
+                    invertFolderBtn.type = 'button';
+                    invertFolderBtn.style.cssText = 'font-size: 10px; color: #38bdf8; background: transparent; border: 1px solid #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 8px; cursor: pointer; transition: all 0.2s; outline: none;';
+                    
+                    if (isFolderInverted) {
+                        invertFolderBtn.textContent = 'Numeration Inverted ✓';
+                        invertFolderBtn.style.background = '#38bdf8';
+                        invertFolderBtn.style.color = '#0f172a';
+                    } else {
+                        invertFolderBtn.textContent = 'Invert Numeration ⇄';
+                    }
+                    
+                    invertFolderBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        folderInversionStates[origParentFolder] = !isFolderInverted;
+                        
+                        // Re-run analysis
+                        const dropArea = document.getElementById('aem-360-drop-area');
+                        finalizeAnalysis(currentScannedFolders, currentScannedFiles, dropArea);
+                    });
+                    
+                    fileSummary.appendChild(invertFolderBtn);
+                }
                 fileDetails.appendChild(fileSummary);
                 
                 const fileListContainer = document.createElement('div');
@@ -911,21 +1012,24 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         const logsEl = document.getElementById('aem-360-logs');
         logsEl.replaceChildren();
         logsEl.appendChild(document.createTextNode('Upload cancelled.'));
+        
+        currentScannedFolders = null;
+        currentScannedFiles = null;
+        
+        allInverted = false;
+        folderInversionStates = {};
+        const invertAllBtn = document.getElementById('aem-360-invert-all-btn');
+        if (invertAllBtn) {
+            invertAllBtn.style.background = 'transparent';
+            invertAllBtn.style.color = '#38bdf8';
+            invertAllBtn.textContent = 'Invert All Numeration';
+        }
     };
 
-    btnApprove.onclick = () => {
-        document.getElementById('aem-360-review-container').style.display = 'none';
-        
-        const abortContainer = document.getElementById('aem-360-abort-container');
-        if (abortContainer) abortContainer.style.display = 'block';
-        
-        const logsEl = document.getElementById('aem-360-logs');
-        if (logsEl) {
-            logsEl.style.display = 'block';
-            logsEl.style.height = 'auto';
-            logsEl.style.flex = '1';
-        }
-        
+    btnApprove.onclick = async () => {
+        btnApprove.textContent = 'Checking existing files...';
+        btnApprove.disabled = true;
+
         // Traverse tree to reconstruct final paths from user inputs
         const finalFolders = new Set();
         const finalFiles = [];
@@ -939,9 +1043,9 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 let newName = inputEl ? inputEl.value.trim() : node._name;
                 
                 // Sanitize user input before applying
-                const bypassRename = document.getElementById('aem-360-bypass-rename')?.checked;
-                if (!bypassRename && window.AEM360Renamer) {
-                    newName = window.AEM360Renamer.cleanFordName(newName, document.querySelector('input[name="aem-locale"]:checked')?.value || 'us', true);
+                if (window.AEM360Renamer) {
+                    const activeLocale = (dropzoneContainer && dropzoneContainer.querySelector('input[name="aem-locale"]:checked')?.value) || 'us';
+                    newName = window.AEM360Renamer.cleanFordName(newName, activeLocale, true);
                 }
                 
                 currentPathKeys.push({ old: node._name, new: newName });
@@ -985,8 +1089,56 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         const progressTextFiles = document.getElementById('aem-360-progress-text-files');
         const progressFill = document.getElementById('aem-360-progress-fill-main');
 
-        logToUI('Starting upload of assets...', 'success');
-        processUploads(sortedFolders, finalFiles, progressTextFolders, progressTextFiles, progressFill);
+        // Check for existing files in AEM using HEAD requests (concurrency: 15)
+        const collisions = [];
+        try {
+            await promisePool(finalFiles, 15, async (fileObj) => {
+                const fileUrl = `${currentBasePath}/${fileObj.path}`.replace(/\/\//g, '/');
+                try {
+                    const res = await fetch(fileUrl, { method: 'HEAD' });
+                    if (res.status === 200) {
+                        collisions.push(fileObj);
+                    }
+                } catch (e) {
+                    // Ignore network errors
+                }
+            });
+        } catch (e) {
+            console.error('Error checking collisions:', e);
+        }
+
+        const startUpload = () => {
+            document.getElementById('aem-360-review-container').style.display = 'none';
+            
+            const abortContainer = document.getElementById('aem-360-abort-container');
+            if (abortContainer) abortContainer.style.display = 'block';
+            
+            const logsEl = document.getElementById('aem-360-logs');
+            if (logsEl) {
+                logsEl.style.display = 'block';
+                logsEl.style.height = 'auto';
+                logsEl.style.flex = '1';
+            }
+
+            logToUI('Starting upload of assets...', 'success');
+            processUploads(sortedFolders, finalFiles, progressTextFolders, progressTextFiles, progressFill);
+        };
+
+        if (collisions.length > 0) {
+            btnApprove.textContent = ' Approve & Upload';
+            btnApprove.disabled = false;
+            
+            showConflictModal(collisions, () => {
+                // Option: Replace All
+                startUpload();
+            }, () => {
+                // Option: Cancelled
+            });
+        } else {
+            btnApprove.textContent = ' Approve & Upload';
+            btnApprove.disabled = false;
+            startUpload();
+        }
     };
 }
 
@@ -1019,7 +1171,9 @@ async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
                 if (initResponse.status === 403) {
                     await getValidToken(tokenRef, fileName);
                 }
-                throw new Error(`InitiateUpload failed: ${initResponse.status}`);
+                const errText = await initResponse.text().catch(() => '');
+                console.error(`[AEM 360 Tool] initiateUpload failed for "${fileName}" at URL: ${initiateUrl}. Status: ${initResponse.status}. Response:`, errText);
+                throw new Error(`InitiateUpload failed: ${initResponse.status} (URL: ${initiateUrl})`);
             }
 
             const initData = await initResponse.json();
@@ -1160,13 +1314,13 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
             return;
         }
 
-        logToUI('Starting folder creation (Concurrency: 10)...', 'info');
+        logToUI('Starting folder creation...', 'info');
         let foldersDone = 0;
         let foldersFailed = 0;
         const failedFoldersSet = new Set();
         textFolders.textContent = `Folders: 0 / ${folders.length}`;
         
-        await promisePool(folders, 10, async (folder) => {
+        await promisePool(folders, 1, async (folder) => {
             if (abortRequested) return;
 
             let targetPath = `${currentBasePath}/${folder}`.replace(/\/\//g, '/');
@@ -1198,6 +1352,8 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
                     });
                     lastStatus = res.status;
                     if (res.status === 409) {
+                        const errText = await res.text().catch(() => '');
+                        console.warn(`[AEM 360 Tool] Folder creation returned 409 Conflict for "${folder}" at URL: ${targetPath}. Response:`, errText);
                         logToUI(`Folder already existed: ${folder}`, 'info');
                         success = true;
                         break;
@@ -1350,6 +1506,88 @@ async function promisePool(items, limit, fn) {
         }
     });
     await Promise.all(workers);
+}
+
+function showConflictModal(collisions, onReplace, onCancel) {
+    const modalId = 'aem-360-conflict-modal';
+    const existing = document.getElementById(modalId);
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.2s ease-out;';
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'width: 360px; max-width: 90%; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; overflow: hidden; padding: 20px; animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 12px;';
+    
+    const warningIcon = document.createElement('span');
+    warningIcon.style.cssText = 'font-size: 20px; display: flex; align-items: center; justify-content: center; color: #f59e0b;';
+    warningIcon.textContent = '⚠️';
+    
+    const title = document.createElement('h3');
+    title.style.cssText = 'margin: 0; font-size: 15px; font-weight: 700; color: #f8fafc; font-family: sans-serif;';
+    title.textContent = 'Conflict Detected';
+    
+    header.appendChild(warningIcon);
+    header.appendChild(title);
+    modal.appendChild(header);
+
+    const desc = document.createElement('p');
+    desc.style.cssText = 'margin: 0 0 14px 0; font-size: 12px; line-height: 1.5; color: #94a3b8; font-family: sans-serif;';
+    desc.textContent = `There are ${collisions.length} files that already exist in the target folder in AEM. How would you like to proceed?`;
+    modal.appendChild(desc);
+
+    const filesContainer = document.createElement('div');
+    filesContainer.className = 'aem-360-custom-scroll';
+    filesContainer.style.cssText = 'max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 12px; margin-bottom: 20px; font-family: monospace; font-size: 11px; color: #e2e8f0; display: flex; flex-direction: column; gap: 6px;';
+    
+    collisions.forEach(c => {
+        const item = document.createElement('div');
+        item.style.cssText = 'word-break: break-all; opacity: 0.85;';
+        const fname = c.path.split('/').pop();
+        item.textContent = `• ${fname}`;
+        filesContainer.appendChild(item);
+    });
+    modal.appendChild(filesContainer);
+
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; width: 100%;';
+
+    const btnReplace = document.createElement('button');
+    btnReplace.type = 'button';
+    btnReplace.style.cssText = 'width: 100%; background: #ef4444; border: none; color: #f8fafc; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2); text-align: center;';
+    btnReplace.textContent = 'Replace All';
+    btnReplace.onclick = () => {
+        overlay.remove();
+        onReplace();
+    };
+    btnReplace.onmouseenter = () => { btnReplace.style.background = '#dc2626'; };
+    btnReplace.onmouseleave = () => { btnReplace.style.background = '#ef4444'; };
+
+    const btnCancel = document.createElement('button');
+    btnCancel.type = 'button';
+    btnCancel.style.cssText = 'width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #f8fafc; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; text-align: center;';
+    btnCancel.textContent = 'Cancel';
+    btnCancel.onclick = () => {
+        overlay.remove();
+        onCancel();
+    };
+    btnCancel.onmouseenter = () => { btnCancel.style.background = 'rgba(255,255,255,0.05)'; };
+    btnCancel.onmouseleave = () => { btnCancel.style.background = 'transparent'; };
+
+    footer.appendChild(btnReplace);
+    footer.appendChild(btnCancel);
+    modal.appendChild(footer);
+    overlay.appendChild(modal);
+
+    if (dropzoneContainer) {
+        dropzoneContainer.appendChild(overlay);
+    } else {
+        document.body.appendChild(overlay);
+    }
 }
 
 } // End of iframe guard else block

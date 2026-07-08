@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "VML AEM 360 Tool",
   "version": "1.0",
-  "description": "Herramienta para inyectar estructuras de assets en AEM con renombrado automático.",
+  "description": "Tool to inject asset structures in AEM with automatic renaming.",
   "permissions": [
     "activeTab"
   ],
