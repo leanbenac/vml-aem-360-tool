@@ -893,8 +893,7 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                     font-family: 'Segoe UI', system-ui, sans-serif;
                     outline: none;
                     margin-left: 4px;
-                    flex: 1;
-                    transition: all 0.2s;
+                    width: 220px;
                     cursor: text;
                 }
                 .tree-input:hover, .tree-input:focus {
