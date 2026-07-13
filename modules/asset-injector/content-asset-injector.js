@@ -704,9 +704,55 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
 
     let renameResults = { cleanedFolders: [], cleanedFiles: [], renameCount: 0 };
     if (bypassRename) {
-        logToUI('Info: Skipping renamer. Using original names.', 'info');
-        renameResults.cleanedFolders = Array.from(foldersToCreate);
-        renameResults.cleanedFiles = filesToUpload.map(f => ({ file: f.file, path: f.path, originalPath: f.path }));
+        logToUI('Info: Skipping renamer. Using original names (auto-detecting missing folders).', 'info');
+        const cleanedFoldersSet = new Set();
+        renameResults.cleanedFiles = filesToUpload.map(f => {
+            let pathParts = f.path.split('/');
+            let fileName = pathParts.pop();
+            
+            let extIdx = fileName.lastIndexOf('.');
+            let baseName = extIdx > -1 ? fileName.substring(0, extIdx) : fileName;
+            let match = baseName.match(/^0*\d+-(.+)$/);
+            
+            if (match) {
+                let originalSuffix = match[1];
+                let devIdx = pathParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
+                if (devIdx !== -1) {
+                    let existingSuffixParts = pathParts.slice(devIdx + 1).filter(p => p.toLowerCase() !== 'exterior' && p.toLowerCase() !== 'interior');
+                    
+                    let cleanedExistingSuffix = existingSuffixParts.map(p => {
+                        return window.AEM360Renamer ? window.AEM360Renamer.cleanFordName(p, locale, true) : p.toLowerCase().replace(/[_ ]/g, '-').replace(/[^a-z0-9\-]/g, '');
+                    }).join('-');
+                    
+                    let compareSuffix = window.AEM360Renamer ? window.AEM360Renamer.cleanFordName(originalSuffix, locale, true) : originalSuffix.toLowerCase().replace(/[_ ]/g, '-').replace(/[^a-z0-9\-]/g, '');
+                    
+                    if (cleanedExistingSuffix && compareSuffix.startsWith(cleanedExistingSuffix + '-')) {
+                        let numExistingHyphens = cleanedExistingSuffix.split('-').length;
+                        let originalSuffixParts = originalSuffix.split('-');
+                        let missingPartsArray = originalSuffixParts.slice(numExistingHyphens);
+                        
+                        if (missingPartsArray.length > 0) {
+                            console.warn(`[Direct Upload] Carpeta(s) intermedia faltante detectada: '${missingPartsArray.join('/')}' para '${fileName}'`);
+                            pathParts.push(...missingPartsArray);
+                        }
+                    }
+                }
+            }
+            
+            let newPath = pathParts.length > 0 ? `${pathParts.join('/')}/${fileName}` : fileName;
+            
+            let currentPath = '';
+            for (let part of pathParts) {
+                currentPath = currentPath ? currentPath + '/' + part : part;
+                cleanedFoldersSet.add(currentPath);
+            }
+            
+            return { file: f.file, path: newPath, originalPath: f.path };
+        });
+        
+        foldersToCreate.forEach(folder => cleanedFoldersSet.add(folder));
+        renameResults.cleanedFolders = Array.from(cleanedFoldersSet);
+        renameResults.renameCount = renameResults.cleanedFiles.filter(f => f.path !== f.originalPath).length;
     } else if (window.AEM360Renamer) {
         renameResults = window.AEM360Renamer.processDroppedFiles(foldersToCreate, filesToUpload, locale, '', extOption, folderInversionStates);
     } else {
@@ -775,8 +821,10 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             if (n._id) {
                 const inputEl = document.getElementById(n._id);
                 let newName = inputEl ? inputEl.value.trim() : n._name;
-                newName = window.AEM360Renamer.cleanFordName(newName, (dropzoneContainer && dropzoneContainer.querySelector('input[name="aem-locale"]:checked')?.value) || 'us', true);
-                currentPathKeys.push({ old: n._name, new: newName });
+                const activeLocale = (dropzoneContainer && dropzoneContainer.querySelector('input[name="aem-locale"]:checked')?.value) || 'us';
+                let oldClean = window.AEM360Renamer.cleanFordName(n._name, activeLocale, true);
+                newName = window.AEM360Renamer.cleanFordName(newName, activeLocale, true);
+                currentPathKeys.push({ old: n._name, new: newName, oldClean: oldClean });
             }
             if (n._info) {
                 n._info.allFiles.forEach(f => {
@@ -785,7 +833,12 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                     sortedKeys.forEach(k => {
                         if (k.old && k.old !== k.new) {
                             let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
-                            finalFileName = finalFileName.replace(regex, k.new);
+                            if (regex.test(finalFileName)) {
+                                finalFileName = finalFileName.replace(regex, k.new);
+                            } else if (k.oldClean && k.oldClean !== k.new) {
+                                let cleanRegex = new RegExp(`(?<=^|-)${k.oldClean}(?=-|\\.|$)`, 'gi');
+                                finalFileName = finalFileName.replace(cleanRegex, k.new);
+                            }
                         }
                     });
                     if (f._uiNewSpan) {
@@ -1155,12 +1208,14 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 let newName = inputEl ? inputEl.value.trim() : node._name;
                 
                 // Sanitize user input before applying
+                let oldClean = node._name;
                 if (window.AEM360Renamer) {
                     const activeLocale = (dropzoneContainer && dropzoneContainer.querySelector('input[name="aem-locale"]:checked')?.value) || 'us';
+                    oldClean = window.AEM360Renamer.cleanFordName(node._name, activeLocale, true);
                     newName = window.AEM360Renamer.cleanFordName(newName, activeLocale, true);
                 }
                 
-                currentPathKeys.push({ old: node._name, new: newName });
+                currentPathKeys.push({ old: node._name, new: newName, oldClean: oldClean });
                 
                 myPath = currentPath ? `${currentPath}/${newName}` : newName;
                 finalFolders.add(myPath);
@@ -1175,7 +1230,12 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                     sortedKeys.forEach(k => {
                         if (k.old && k.old !== k.new) {
                             let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
-                            finalFileName = finalFileName.replace(regex, k.new);
+                            if (regex.test(finalFileName)) {
+                                finalFileName = finalFileName.replace(regex, k.new);
+                            } else if (k.oldClean && k.oldClean !== k.new) {
+                                let cleanRegex = new RegExp(`(?<=^|-)${k.oldClean}(?=-|\\.|$)`, 'gi');
+                                finalFileName = finalFileName.replace(cleanRegex, k.new);
+                            }
                         }
                     });
                     

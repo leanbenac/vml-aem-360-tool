@@ -115,6 +115,37 @@ window.AEM360Renamer = {
             }
 
             let originalFileName = reorderedParts.pop(); // Remove file from parts
+            
+            // --- DETECT MISSING FOLDER FROM FILENAME ---
+            let extIdx = originalFileName.lastIndexOf('.');
+            let baseName = extIdx > -1 ? originalFileName.substring(0, extIdx) : originalFileName;
+            
+            let match = baseName.match(/^0*\d+-(.+)$/);
+            if (match) {
+                let fileSuffix = this.cleanFordName(match[1], locale, true);
+                
+                let tempDeviceIdx = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
+                if (tempDeviceIdx !== -1) {
+                    let tempStartIdx = tempDeviceIdx + 1;
+                    let existingSuffixParts = reorderedParts.slice(tempStartIdx).filter(p => p.toLowerCase() !== 'exterior' && p.toLowerCase() !== 'interior');
+                    
+                    let cleanedExistingSuffix = existingSuffixParts.map(p => {
+                        let cleaned = this.cleanFordName(p, locale, true);
+                        return colorMap[cleaned] ? colorMap[cleaned] : cleaned;
+                    }).join('-');
+                    
+                    if (cleanedExistingSuffix && fileSuffix.startsWith(cleanedExistingSuffix + '-')) {
+                        let missingPart = fileSuffix.substring(cleanedExistingSuffix.length + 1);
+                        if (missingPart) {
+                            let missingPartsArray = missingPart.split('-');
+                            console.warn(`[Renamer] Carpeta(s) faltante(s) detectada(s) y agregada(s): '${missingPartsArray.join('/')}' para el archivo '${originalFileName}'`);
+                            reorderedParts.push(...missingPartsArray);
+                        }
+                    }
+                }
+            }
+            // -------------------------------------------
+            
             let deviceIndex = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
             
             // 2. Clean parent folder names (folders go together: bronzefire)
