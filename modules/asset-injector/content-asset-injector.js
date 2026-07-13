@@ -281,12 +281,18 @@ function injectDropzoneUI() {
                 )
             )
         ),
-        h('button', {
-            id: 'aem-360-invert-all-btn',
-            type: 'button',
-            style: 'background: transparent; border: 1px solid #38bdf8; border-radius: 6px; color: #38bdf8; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; width: 100%; text-align: center;',
-            textContent: 'Invert All Numeration'
-        })
+        h('div', { style: 'display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;' },
+            h('button', {
+                id: 'aem-360-invert-all-btn',
+                type: 'button',
+                style: 'background: transparent; border: 1px solid #38bdf8; border-radius: 6px; color: #38bdf8; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; flex: 1; text-align: center;',
+                textContent: 'Invert All Numeration'
+            }),
+            h('label', { style: 'cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #e2e8f0; white-space: nowrap;' },
+                h('input', { type: 'checkbox', id: 'aem-360-direct-upload', style: 'accent-color: #38bdf8; margin: 0; width: 16px; height: 16px;' }),
+                'Direct Upload'
+            )
+        )
     ));
 
     dropzoneContainer.appendChild(h('div', { id: 'aem-360-top-destination', style: 'display: none; background: rgba(15, 23, 42, 0.4); padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);' },
@@ -305,6 +311,7 @@ function injectDropzoneUI() {
                 h('span', { id: 'aem-360-browse-btn', style: 'color: #38bdf8; cursor: pointer; text-decoration: underline;', textContent: 'Browse folders' })
             ),
             h('input', { type: 'file', id: 'aem-360-file-input', webkitdirectory: true, directory: true, multiple: true, style: 'display: none;' }),
+            h('input', { type: 'file', id: 'aem-360-file-input-files', multiple: true, style: 'display: none;' }),
             h('div', { style: 'margin-top: 10px; padding: 8px 12px; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; background: rgba(56, 189, 248, 0.05); flex-shrink: 0; width: 90%; line-height: 1.4;' },
                 h('span', { style: 'font-size: 12px; color: #cbd5e1; font-weight: 600;', textContent: 'Destination: ' }),
                 h('span', { style: 'font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all;', textContent: currentBasePath })
@@ -356,10 +363,34 @@ function injectDropzoneUI() {
     });
 
     const fileInput = document.getElementById('aem-360-file-input');
+    const fileInputFiles = document.getElementById('aem-360-file-input-files');
     const browseBtn = document.getElementById('aem-360-browse-btn');
+    const directUploadCheckbox = document.getElementById('aem-360-direct-upload');
 
-    browseBtn.addEventListener('click', () => fileInput.click());
+    browseBtn.addEventListener('click', () => {
+        if (directUploadCheckbox && directUploadCheckbox.checked) {
+            fileInputFiles.click();
+        } else {
+            fileInput.click();
+        }
+    });
+
     fileInput.addEventListener('change', handleBrowse, false);
+    fileInputFiles.addEventListener('change', handleBrowse, false);
+
+    if (directUploadCheckbox) {
+        directUploadCheckbox.addEventListener('change', () => {
+            if (directUploadCheckbox.checked) {
+                browseBtn.textContent = 'Browse files';
+            } else {
+                browseBtn.textContent = 'Browse folders';
+            }
+            if (currentScannedFolders && currentScannedFiles) {
+                const dropArea = document.getElementById('aem-360-drop-area');
+                finalizeAnalysis(currentScannedFolders, currentScannedFiles, dropArea);
+            }
+        });
+    }
 
     // Locale Color Shift
     const localeRadios = document.querySelectorAll('input[name="aem-locale"]');
@@ -595,9 +626,14 @@ async function handleDrop(e) {
         }
     }
 
+    const entries = [];
     for (let i = 0; i < items.length; i++) {
         const item = items[i].webkitGetAsEntry();
-        if (item) await traverseFileTree(item);
+        if (item) entries.push(item);
+    }
+
+    for (const entry of entries) {
+        await traverseFileTree(entry);
     }
 
     currentScannedFolders = foldersToCreate;
@@ -632,7 +668,7 @@ async function handleBrowse(e) {
 
     for (const file of files) {
         if (file.name === '.DS_Store' || file.name.toLowerCase() === 'thumbs.db' || file.name.startsWith('._')) continue;
-        const path = file.webkitRelativePath;
+        const path = file.webkitRelativePath || file.name;
         filesToUpload.push({ file, path });
         const parts = path.split('/');
         let currentPath = '';
@@ -663,8 +699,15 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         }
     });
 
+    const directUploadCheckbox = document.getElementById('aem-360-direct-upload');
+    const bypassRename = directUploadCheckbox ? directUploadCheckbox.checked : false;
+
     let renameResults = { cleanedFolders: [], cleanedFiles: [], renameCount: 0 };
-    if (window.AEM360Renamer) {
+    if (bypassRename) {
+        logToUI('Info: Skipping renamer. Using original names.', 'info');
+        renameResults.cleanedFolders = Array.from(foldersToCreate);
+        renameResults.cleanedFiles = filesToUpload.map(f => ({ file: f.file, path: f.path, originalPath: f.path }));
+    } else if (window.AEM360Renamer) {
         renameResults = window.AEM360Renamer.processDroppedFiles(foldersToCreate, filesToUpload, locale, '', extOption, folderInversionStates);
     } else {
         logToUI('Warning: Renamer module not found. Proceeding with original names.', 'warn');
@@ -711,15 +754,19 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         const parts = group.newParent.split('/').filter(p => p);
         
         let currentLevel = tree;
-        parts.forEach((part, index) => {
-            if (!currentLevel._children[part]) {
-                currentLevel._children[part] = { _children: {}, _name: part, _info: null };
-            }
-            if (index === parts.length - 1) {
-                currentLevel._children[part]._info = group;
-            }
-            currentLevel = currentLevel._children[part];
-        });
+        if (parts.length === 0) {
+            tree._info = group;
+        } else {
+            parts.forEach((part, index) => {
+                if (!currentLevel._children[part]) {
+                    currentLevel._children[part] = { _children: {}, _name: part, _info: null };
+                }
+                if (index === parts.length - 1) {
+                    currentLevel._children[part]._info = group;
+                }
+                currentLevel = currentLevel._children[part];
+            });
+        }
     });
 
     function updatePreviews() {
@@ -815,6 +862,71 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 }
             `;
             frag.appendChild(style);
+
+            if (node._info) {
+                const fileContainer = document.createElement('div');
+                fileContainer.style.cssText = 'margin-bottom: 12px; padding: 6px 12px; background: rgba(0,0,0,0.25); border-radius: 6px; border-left: 2px solid #10b981; overflow-x: auto;';
+                
+                const fileDetails = document.createElement('details');
+                const fileSummary = document.createElement('summary');
+                fileSummary.style.cssText = 'cursor: pointer; outline: none; user-select: none;';
+                
+                const fileSummarySpan = document.createElement('span');
+                fileSummarySpan.style.cssText = 'font-size: 10px; color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;';
+                fileSummarySpan.textContent = `View ${node._info.filesCount} files ▼`;
+                fileSummary.appendChild(fileSummarySpan);
+                fileDetails.appendChild(fileSummary);
+
+                const fileListContainer = document.createElement('div');
+                fileListContainer.className = 'aem-360-custom-scroll';
+                fileListContainer.style.cssText = 'font-family: monospace; font-size: 11px; display: flex; flex-direction: column; margin-top: 8px; padding-left: 4px; max-height: 150px; overflow-y: auto; overflow-x: auto; white-space: nowrap;';
+
+                node._info.allFiles.forEach(f => {
+                    const fDiv = document.createElement('div');
+                    fDiv.style.cssText = 'display: flex; gap: 6px; align-items: center; margin-bottom: 3px; white-space: nowrap;';
+                    
+                    const dot = document.createElement('span');
+                    dot.style.color = '#475569';
+                    dot.textContent = '•';
+                    fDiv.appendChild(dot);
+                    
+                    const origSpan = document.createElement('span');
+                    origSpan.textContent = f.orig;
+                    
+                    const arrowSpan = document.createElement('span');
+                    arrowSpan.textContent = '➔';
+                    
+                    const newSpan = document.createElement('span');
+                    newSpan.textContent = f.new;
+                    
+                    f._uiOrigSpan = origSpan;
+                    f._uiArrowSpan = arrowSpan;
+                    f._uiNewSpan = newSpan;
+                    
+                    function updateVisibility() {
+                        if (origSpan.textContent !== newSpan.textContent) {
+                            origSpan.style.cssText = 'text-decoration: line-through; color: #f87171; opacity: 0.8;';
+                            arrowSpan.style.cssText = 'color: #10b981; font-weight: bold; margin: 0 4px; display: inline;';
+                            newSpan.style.cssText = 'color: #34d399; font-weight: bold; display: inline;';
+                        } else {
+                            origSpan.style.cssText = 'color: #cbd5e1; text-decoration: none; opacity: 1;';
+                            arrowSpan.style.cssText = 'display: none;';
+                            newSpan.style.cssText = 'display: none;';
+                        }
+                    }
+                    updateVisibility();
+                    f._uiUpdateVisibility = updateVisibility;
+                    
+                    fDiv.appendChild(origSpan);
+                    fDiv.appendChild(arrowSpan);
+                    fDiv.appendChild(newSpan);
+                    fileListContainer.appendChild(fDiv);
+                });
+
+                fileDetails.appendChild(fileListContainer);
+                fileContainer.appendChild(fileDetails);
+                frag.appendChild(fileContainer);
+            }
         }
         
         const keys = Object.keys(node._children).sort();
