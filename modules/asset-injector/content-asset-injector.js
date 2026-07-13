@@ -739,6 +739,10 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
                 }
             }
             
+            if (window.AEM360Renamer) {
+                pathParts = pathParts.map(p => window.AEM360Renamer.cleanFordName(p, locale, true));
+            }
+
             let newPath = pathParts.length > 0 ? `${pathParts.join('/')}/${fileName}` : fileName;
             
             let currentPath = '';
@@ -750,7 +754,12 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             return { file: f.file, path: newPath, originalPath: f.path };
         });
         
-        foldersToCreate.forEach(folder => cleanedFoldersSet.add(folder));
+        foldersToCreate.forEach(folder => {
+            if (window.AEM360Renamer) {
+                folder = folder.split('/').map(p => window.AEM360Renamer.cleanFordName(p, locale, true)).join('/');
+            }
+            cleanedFoldersSet.add(folder);
+        });
         renameResults.cleanedFolders = Array.from(cleanedFoldersSet);
         renameResults.renameCount = renameResults.cleanedFiles.filter(f => f.path !== f.originalPath).length;
     } else if (window.AEM360Renamer) {
