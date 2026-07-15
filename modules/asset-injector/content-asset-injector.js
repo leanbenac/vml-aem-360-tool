@@ -1310,18 +1310,39 @@ async function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
         const progressTextFiles = document.getElementById('aem-360-progress-text-files');
         const progressFill = document.getElementById('aem-360-progress-fill-main');
 
-        // Check for existing files in AEM using HEAD requests (concurrency: 15)
+        // Check for existing files in AEM by fetching folder JSON (massively faster than checking individual files)
         const collisions = [];
         try {
-            await promisePool(finalFiles, 15, async (fileObj) => {
-                const fileUrl = `${currentBasePath}/${fileObj.path}`.replace(/\/\//g, '/');
+            const filesByFolder = {};
+            finalFiles.forEach(f => {
+                let parts = f.path.split('/');
+                let fileName = parts.pop();
+                let folderPath = parts.join('/');
+                if (!filesByFolder[folderPath]) filesByFolder[folderPath] = [];
+                filesByFolder[folderPath].push({ fileObj: f, fileName: fileName });
+            });
+
+            const uniqueFolders = Object.keys(filesByFolder);
+            let checkedCount = 0;
+            
+            await promisePool(uniqueFolders, 10, async (folderPath) => {
+                const folderUrl = `${currentBasePath}/${folderPath}`.replace(/\/\//g, '/');
                 try {
-                    const res = await fetch(fileUrl, { method: 'HEAD' });
+                    const res = await fetch(folderUrl + '.1.json');
                     if (res.status === 200) {
-                        collisions.push(fileObj);
+                        const data = await res.json();
+                        filesByFolder[folderPath].forEach(item => {
+                            if (data[item.fileName] !== undefined) {
+                                collisions.push(item.fileObj);
+                            }
+                        });
                     }
                 } catch (e) {
-                    // Ignore network errors
+                    // Ignore network errors or JSON parse errors (folder might not exist)
+                }
+                checkedCount++;
+                if (checkedCount % 3 === 0 || checkedCount === uniqueFolders.length) {
+                    btnApprove.textContent = `Checking folders (${checkedCount}/${uniqueFolders.length})...`;
                 }
             });
         } catch (e) {
