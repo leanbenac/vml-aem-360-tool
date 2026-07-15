@@ -114,6 +114,34 @@ window.AEM360Renamer = {
 
             let originalFileName = reorderedParts.pop(); // Remove file from parts
             
+            // --- DETECT MISSING WHEEL CODE FOLDERS (EXTERIOR ONLY) ---
+            let isExterior = pathParts.some(p => p.toLowerCase() === 'exterior');
+            let extIdx = originalFileName.lastIndexOf('.');
+            let baseName = extIdx > -1 ? originalFileName.substring(0, extIdx) : originalFileName;
+            let match = baseName.match(/^0*\d+-(.+)$/);
+            
+            if (isExterior && match) {
+                let fileSuffix = this.cleanFordName(match[1], locale, true);
+                
+                let tempDeviceIdx = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
+                if (tempDeviceIdx !== -1) {
+                    let tempStartIdx = tempDeviceIdx + 1;
+                    let existingSuffixParts = reorderedParts.slice(tempStartIdx).filter(p => p.toLowerCase() !== 'exterior' && p.toLowerCase() !== 'interior');
+                    
+                    // Comparamos contra la versión NO truncada de la carpeta, para evitar confundir palabras truncadas con llantas
+                    let unTruncatedSuffix = existingSuffixParts.map(p => this.cleanFordName(p, locale, true)).join('-');
+                    
+                    if (unTruncatedSuffix && fileSuffix.startsWith(unTruncatedSuffix + '-')) {
+                        let missingPart = fileSuffix.substring(unTruncatedSuffix.length + 1);
+                        if (missingPart) {
+                            // En exterior, lo que sobra al final del nombre suele ser el código de la llanta (ej. 16x)
+                            reorderedParts.push(missingPart);
+                        }
+                    }
+                }
+            }
+            // -------------------------------------------
+            
             deviceIndex = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
             
             // Identify where the Trim is located so we can format it properly (remove hyphens)
