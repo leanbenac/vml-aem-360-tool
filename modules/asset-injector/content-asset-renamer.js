@@ -56,11 +56,11 @@ window.AEM360Renamer = {
             }
         });
 
-        // FIRST PASS: Identify colors and calculate truncations
         const colorOriginals = new Set();
         filesToUpload.forEach(fileObj => {
             let pathParts = fileObj.path.split('/');
             let devIdx = pathParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
+            
             if (devIdx !== -1) {
                 for (let i = devIdx + 1; i < pathParts.length - 1; i++) {
                     let p = pathParts[i].toLowerCase();
@@ -99,69 +99,46 @@ window.AEM360Renamer = {
         filesToUpload.forEach(fileObj => {
             let pathParts = fileObj.path.split('/');
             
-            // 1. Path Reordering: Swap View and Trim (Do NOT drop the Model root)
-            // Find 'exterior' or 'interior' in the path
+            // 1. Path Reordering: Move Trim before View ONLY if it's misplaced
             let viewIndex = pathParts.findIndex(p => p.toLowerCase() === 'exterior' || p.toLowerCase() === 'interior');
+            let deviceIndex = pathParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
             
             let reorderedParts = [...pathParts];
-            // Ensure we found it, and there is at least a Trim folder and a File after it
-            if (viewIndex !== -1 && viewIndex < pathParts.length - 2) {
-                // Swap View (index viewIndex) and Trim (index viewIndex + 1)
-                let temp = reorderedParts[viewIndex];
-                reorderedParts[viewIndex] = reorderedParts[viewIndex + 1];
-                reorderedParts[viewIndex + 1] = temp;
-            } else {
-                viewIndex = -1; // Safe fallback
+            if (viewIndex !== -1 && deviceIndex !== -1 && viewIndex < deviceIndex) {
+                // Check if there is a Trim folder sitting BETWEEN View and Device (e.g. exterior/Platinum/desktop)
+                if (viewIndex + 1 < deviceIndex) {
+                    let trims = reorderedParts.splice(viewIndex + 1, deviceIndex - viewIndex - 1);
+                    reorderedParts.splice(viewIndex, 0, ...trims); // Move Trim(s) before View
+                }
             }
 
             let originalFileName = reorderedParts.pop(); // Remove file from parts
             
-            // --- DETECT MISSING FOLDER FROM FILENAME ---
-            let extIdx = originalFileName.lastIndexOf('.');
-            let baseName = extIdx > -1 ? originalFileName.substring(0, extIdx) : originalFileName;
+            deviceIndex = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
             
-            let match = baseName.match(/^0*\d+-(.+)$/);
-            if (match) {
-                let fileSuffix = this.cleanFordName(match[1], locale, true);
-                
-                let tempDeviceIdx = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
-                if (tempDeviceIdx !== -1) {
-                    let tempStartIdx = tempDeviceIdx + 1;
-                    let existingSuffixParts = reorderedParts.slice(tempStartIdx).filter(p => p.toLowerCase() !== 'exterior' && p.toLowerCase() !== 'interior');
-                    
-                    let cleanedExistingSuffix = existingSuffixParts.map(p => {
-                        let cleaned = this.cleanFordName(p, locale, true);
-                        return colorMap[cleaned] ? colorMap[cleaned] : cleaned;
-                    }).join('-');
-                    
-                    if (cleanedExistingSuffix && fileSuffix.startsWith(cleanedExistingSuffix + '-')) {
-                        let missingPart = fileSuffix.substring(cleanedExistingSuffix.length + 1);
-                        if (missingPart) {
-                            let missingPartsArray = missingPart.split('-');
-                            console.warn(`[Renamer] Carpeta(s) faltante(s) detectada(s) y agregada(s): '${missingPartsArray.join('/')}' para el archivo '${originalFileName}'`);
-                            reorderedParts.push(...missingPartsArray);
-                        }
-                    }
-                }
+            // Identify where the Trim is located so we can format it properly (remove hyphens)
+            let trimIndex = -1;
+            if (viewIndex !== -1) {
+                // If it was already correct (Trim before View), it's at viewIndex - 1. 
+                // If we moved it, it's at viewIndex (since we inserted it there).
+                // Let's rely on finding it just before the View.
+                trimIndex = viewIndex > 0 ? viewIndex - 1 : -1;
             }
-            // -------------------------------------------
-            
-            let deviceIndex = reorderedParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
-            
+
             // 2. Clean parent folder names (folders go together: bronzefire)
             let cleanedParentParts = reorderedParts.map((p, index) => {
                 let lowerP = p.toLowerCase();
                 
-                // Trim (the one swapped to viewIndex)
-                if (viewIndex !== -1 && index === viewIndex) {
+                // Trim formatting
+                if (index === trimIndex) {
                     if (trimOverride) return trimOverride.toLowerCase().replace(/[_ ]/g, '-');
                     
-                    let trim = lowerP.replace(/[_ ]/g, ''); // Remove all spaces and underscores
-                    if (trim === 'maxplatinum' || trim === 'platinummax') return 'platinummax';
+                    let trim = lowerP.replace(/[_ ]/g, '-'); // Replace spaces and underscores with hyphens
+                    if (trim === 'maxplatinum' || trim === 'platinummax' || trim === 'max-platinum' || trim === 'platinum-max') return 'platinummax';
                     return trim;
                 }
                 
-                // Normal cleaning for colors, wheels, view, device, and Model
+                // Normal cleaning for colors, wheels, view, device, and Model root
                 let cleaned = this.cleanFordName(p, locale, true);
                 return colorMap[cleaned] ? colorMap[cleaned] : cleaned;
             });

@@ -319,14 +319,14 @@ function injectDropzoneUI() {
         )
     ));
 
-    dropzoneContainer.appendChild(h('div', { id: 'aem-360-review-container', style: 'display: none; flex: 1; flex-direction: column; overflow: hidden;' },
+    dropzoneContainer.appendChild(h('div', { id: 'aem-360-review-container', style: 'display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0;' },
         h('div', { style: 'padding: 12px 20px; background: rgba(56, 189, 248, 0.05); border-bottom: 1px solid rgba(56, 189, 248, 0.1); display: flex; flex-direction: column; gap: 8px;' },
             h('div', { style: 'display: flex; justify-content: space-between; align-items: center;' },
                 h('h4', { style: 'margin: 0; font-size: 14px; color: #38bdf8; font-weight: 600;', textContent: 'Review Cleaned Assets' }),
                 h('span', { id: 'aem-360-review-count', style: 'font-size: 12px; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px;', textContent: '0 items' })
             )
         ),
-        h('div', { id: 'aem-360-review-list', style: 'flex: 1; overflow-y: auto; padding: 16px 20px; font-family: monospace; font-size: 11px; color: #cbd5e1;' }),
+        h('div', { id: 'aem-360-review-list', style: 'flex: 1; overflow-y: auto; min-height: 0; padding: 16px 20px; font-family: monospace; font-size: 11px; color: #cbd5e1; transform: translateZ(0);' }),
         h('div', { style: 'padding: 16px 20px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; gap: 12px;' },
             h('button', { id: 'aem-360-cancel-review-btn', style: 'flex: 1; padding: 12px; font-weight: 600; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.02); color: #cbd5e1; font-size: 14px;', textContent: 'Cancel' }),
             h('button', { id: 'aem-360-approve-btn', style: 'flex: 2; padding: 12px; font-weight: 600; cursor: pointer; border: none; border-radius: 8px; background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; font-size: 14px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;' },
@@ -588,15 +588,22 @@ async function handleDrop(e) {
     spinnerDiv.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; animation: fadeIn 0.3s;';
     spinnerDiv.appendChild(h('div', { className: 'aem-360-spinner' }));
     spinnerDiv.appendChild(h('p', { style: 'margin-top: 20px; font-weight: 600; color: #38bdf8; font-size: 16px;', textContent: 'Scanning & Analyzing Files...' }));
+    spinnerDiv.appendChild(h('p', { id: 'aem-360-scanning-progress-text', style: 'margin-top: 8px; font-size: 13px; color: #94a3b8; font-family: monospace;', textContent: 'Reading file system...' }));
     dropArea.appendChild(spinnerDiv);
     
     const foldersToCreate = new Set();
     const filesToUpload = [];
+    let scannedCount = 0;
 
     async function traverseFileTree(item, path = "") {
         if (item.isFile) {
             return new Promise((resolve) => {
                 item.file((file) => {
+                    scannedCount++;
+                    if (scannedCount % 100 === 0) {
+                        const pText = document.getElementById('aem-360-scanning-progress-text');
+                        if (pText) pText.textContent = `Found ${scannedCount} files...`;
+                    }
                     if (file.name === '.DS_Store' || file.name.toLowerCase() === 'thumbs.db' || file.name.startsWith('._')) {
                         resolve(); return;
                     }
@@ -639,7 +646,7 @@ async function handleDrop(e) {
     currentScannedFolders = foldersToCreate;
     currentScannedFiles = filesToUpload;
     logToUI(`Analysis complete: ${foldersToCreate.size} folders, ${filesToUpload.length} files.`, 'success');
-    finalizeAnalysis(foldersToCreate, filesToUpload, dropArea);
+    await finalizeAnalysis(foldersToCreate, filesToUpload, dropArea);
 }
 
 async function handleBrowse(e) {
@@ -658,6 +665,7 @@ async function handleBrowse(e) {
     spinnerDiv.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; animation: fadeIn 0.3s;';
     spinnerDiv.appendChild(h('div', { className: 'aem-360-spinner' }));
     spinnerDiv.appendChild(h('p', { style: 'margin-top: 20px; font-weight: 600; color: #38bdf8; font-size: 16px;', textContent: 'Scanning & Analyzing Files...' }));
+    spinnerDiv.appendChild(h('p', { id: 'aem-360-scanning-progress-text', style: 'margin-top: 8px; font-size: 13px; color: #94a3b8; font-family: monospace;', textContent: 'Preparing...' }));
     dropArea.appendChild(spinnerDiv);
 
     // Force browser to paint the spinner before blocking the UI thread with the synchronous loop
@@ -665,8 +673,17 @@ async function handleBrowse(e) {
 
     const foldersToCreate = new Set();
     const filesToUpload = [];
+    const totalFiles = files.length;
+    let count = 0;
 
     for (const file of files) {
+        count++;
+        if (count % 250 === 0) {
+            const pText = document.getElementById('aem-360-scanning-progress-text');
+            if (pText) pText.textContent = `Reading files... ${count} / ${totalFiles}`;
+            await new Promise(r => setTimeout(r, 0));
+        }
+        
         if (file.name === '.DS_Store' || file.name.toLowerCase() === 'thumbs.db' || file.name.startsWith('._')) continue;
         const path = file.webkitRelativePath || file.name;
         filesToUpload.push({ file, path });
@@ -682,14 +699,18 @@ async function handleBrowse(e) {
     currentScannedFolders = foldersToCreate;
     currentScannedFiles = filesToUpload;
     logToUI(`Analysis complete: ${foldersToCreate.size} folders, ${filesToUpload.length} files.`, 'success');
-    finalizeAnalysis(foldersToCreate, filesToUpload, dropArea);
+    await finalizeAnalysis(foldersToCreate, filesToUpload, dropArea);
 }
 
-function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
+async function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
     const localeInput = dropzoneContainer ? dropzoneContainer.querySelector('input[name="aem-locale"]:checked') : null;
     const locale = localeInput ? localeInput.value : 'us';
     const extInput = dropzoneContainer ? dropzoneContainer.querySelector('input[name="aem-ext"]:checked') : null;
     const extOption = extInput ? extInput.value : 'jpeg';
+    
+    const pText = document.getElementById('aem-360-scanning-progress-text');
+    if (pText) pText.textContent = `Applying renaming rules...`;
+    await new Promise(r => setTimeout(r, 50));
     
     // Ensure all folders have an inversion state, defaulting to the global allInverted state if not set
     filesToUpload.forEach(f => {
@@ -711,6 +732,14 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             let fileName = pathParts.pop();
             
             let extIdx = fileName.lastIndexOf('.');
+            if (extIdx > -1) {
+                let currentExt = fileName.substring(extIdx + 1).toLowerCase();
+                if (currentExt === 'jpg' || currentExt === 'jpeg') {
+                    fileName = fileName.substring(0, extIdx) + '.' + extOption;
+                    extIdx = fileName.lastIndexOf('.'); // Update index after change
+                }
+            }
+            
             let baseName = extIdx > -1 ? fileName.substring(0, extIdx) : fileName;
             let match = baseName.match(/^0*\d+-(.+)$/);
             
@@ -741,6 +770,15 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             
             if (window.AEM360Renamer) {
                 pathParts = pathParts.map(p => window.AEM360Renamer.cleanFordName(p, locale, true));
+                
+                let fileExtIdx = fileName.lastIndexOf('.');
+                if (fileExtIdx > -1) {
+                    let base = fileName.substring(0, fileExtIdx);
+                    let ext = fileName.substring(fileExtIdx);
+                    fileName = window.AEM360Renamer.cleanFordName(base, locale, true) + ext;
+                } else {
+                    fileName = window.AEM360Renamer.cleanFordName(fileName, locale, true);
+                }
             }
 
             let newPath = pathParts.length > 0 ? `${pathParts.join('/')}/${fileName}` : fileName;
@@ -771,6 +809,9 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
     }
 
     const { cleanedFolders, cleanedFiles, renameCount } = renameResults;
+
+    if (pText) pText.textContent = `Building preview tree...`;
+    await new Promise(r => setTimeout(r, 50));
 
     // Populate Review UI
     const reviewList = document.getElementById('aem-360-review-list');
@@ -1004,7 +1045,7 @@ function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             summary.style.cssText = 'cursor: pointer; font-family: system-ui, -apple-system, sans-serif; color: #f8fafc; padding: 2px 0; font-size: 13px; font-weight: 500; user-select: none; transition: color 0.2s; display: flex; align-items: center;';
             
             const folderIconSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            folderIconSvg.setAttribute("width", "14"); folderIconSvg.setAttribute("height", "14"); folderIconSvg.setAttribute("viewBox", "0 0 24 24"); folderIconSvg.setAttribute("fill", "#0ea5e9"); folderIconSvg.setAttribute("stroke", "#38bdf8"); folderIconSvg.setAttribute("stroke-width", "1.5"); folderIconSvg.setAttribute("stroke-linecap", "round"); folderIconSvg.setAttribute("stroke-linejoin", "round"); folderIconSvg.style.cssText = 'margin-right: 6px; position: relative; top: 2px; flex-shrink: 0;';
+            folderIconSvg.setAttribute("width", "14"); folderIconSvg.setAttribute("height", "14"); folderIconSvg.setAttribute("viewBox", "0 0 24 24"); folderIconSvg.setAttribute("fill", "#0ea5e9"); folderIconSvg.setAttribute("stroke", "#38bdf8"); folderIconSvg.setAttribute("stroke-width", "1.5"); folderIconSvg.setAttribute("stroke-linecap", "round"); folderIconSvg.setAttribute("stroke-linejoin", "round"); folderIconSvg.style.cssText = 'margin-right: 6px; flex-shrink: 0;';
             const folderIconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
             folderIconPath.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
             folderIconSvg.appendChild(folderIconPath);
