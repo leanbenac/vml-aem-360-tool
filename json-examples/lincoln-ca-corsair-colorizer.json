@@ -1,0 +1,195 @@
+[
+    {
+        "model": "Corsair Hybrid Premiere",
+        "modelId": "premiere",
+        "exteriorColors": [
+            {
+                "name": "Infinite Black",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "infinite-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Chroma Flame Red",
+                "id": "PVE",
+                "thumbnail": "",
+                "shortName": "chroma-flame",
+                "hexcode": "#9c0d00",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Manhattan Green",
+                "id": "PFU",
+                "thumbnail": "",
+                "shortName": "manhattan-green",
+                "hexcode": "#172405",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Nocturnal Blue",
+                "id": "PC1",
+                "thumbnail": "",
+                "shortName": "nocturnal-blue",
+                "hexcode": "#476372",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Tinted Copper",
+                "id": "PAK",
+                "thumbnail": "",
+                "shortName": "tinted-copper",
+                "hexcode": "#b19fa0",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "White Platinum",
+                "id": "PUG",
+                "thumbnail": "",
+                "shortName": "white-platinum",
+                "hexcode": "#efefec",
+                "costlabel": "(extra-cost colour)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "19” Bright Machined Aluminum Wheels with Magnetic Paint",
+                "id": "64R",
+                "thumbnail": "",
+                "shortName": "64r",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Ebony",
+                "id": "89E",
+                "thumbnail": "",
+                "shortName": "ebony",
+                "hexcode": "#1b1b1d",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Medium Light Space Grey",
+                "id": "89S",
+                "thumbnail": "",
+                "shortName": "medium-light",
+                "hexcode": "#d0c7c1",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/lincoln/en_ca/images/corsair/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/lincoln/en_ca/images/corsair/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=premiere"
+    },
+    {
+        "model": "Corsair Hybrid Reserve",
+        "modelId": "reserve",
+        "exteriorColors": [
+            {
+                "name": "Infinite Black",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "infinite-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Chroma Flame Red",
+                "id": "PVE",
+                "thumbnail": "",
+                "shortName": "chroma-flame",
+                "hexcode": "#9c0d00",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Manhattan Green",
+                "id": "PFU",
+                "thumbnail": "",
+                "shortName": "manhattan-green",
+                "hexcode": "#172405",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Nocturnal Blue",
+                "id": "PC1",
+                "thumbnail": "",
+                "shortName": "nocturnal-blue",
+                "hexcode": "#476372",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Tinted Copper",
+                "id": "PAK",
+                "thumbnail": "",
+                "shortName": "tinted-copper",
+                "hexcode": "#b19fa0",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "White Platinum",
+                "id": "PUG",
+                "thumbnail": "",
+                "shortName": "white-platinum",
+                "hexcode": "#efefec",
+                "costlabel": "(extra-cost colour)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "19” Bright Machined Aluminum Wheels with Magnetic Paint",
+                "id": "64R",
+                "thumbnail": "",
+                "shortName": "64r",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Ebony",
+                "id": "89E",
+                "thumbnail": "",
+                "shortName": "ebony",
+                "hexcode": "#1b1b1d",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Medium Light Space Grey",
+                "id": "89S",
+                "thumbnail": "",
+                "shortName": "medium-light",
+                "hexcode": "#d0c7c1",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Stellar Sun",
+                "id": "89P",
+                "thumbnail": "",
+                "shortName": "stellar-sun",
+                "hexcode": "#83543a",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/lincoln/en_ca/images/corsair/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/lincoln/en_ca/images/corsair/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=reserve"
+    }
+]

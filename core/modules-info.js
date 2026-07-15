@@ -12,5 +12,15 @@ const MODULES_DOCUMENTATION = {
       "Automatically map files to the correct AEM JCR paths.",
       "Push assets directly into the AEM repository."
     ]
+  },
+  colorizerCreator: {
+    title: "Colorizer JSON Creator",
+    description: "Generate AEM component JSON configs by managing models, VDM sales codes, colors, wheels, and assets.",
+    validations: [
+      "Define vehicle models and NASAPI model IDs.",
+      "Manage exterior colors, wheels, and interior configurations.",
+      "Import existing configurations to edit them or add new colors.",
+      "Export generated JSON configurations instantly."
+    ]
   }
 };

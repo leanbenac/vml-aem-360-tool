@@ -329,6 +329,7 @@ function injectDropzoneUI() {
         h('div', { id: 'aem-360-review-list', style: 'flex: 1; overflow-y: auto; min-height: 0; padding: 16px 20px; font-family: monospace; font-size: 11px; color: #cbd5e1; transform: translateZ(0);' }),
         h('div', { style: 'padding: 16px 20px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; gap: 12px;' },
             h('button', { id: 'aem-360-cancel-review-btn', style: 'flex: 1; padding: 12px; font-weight: 600; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.02); color: #cbd5e1; font-size: 14px;', textContent: 'Cancel' }),
+            h('button', { id: 'aem-360-export-colorizer-btn', style: 'flex: 1.5; padding: 12px; font-weight: 600; cursor: pointer; border: 1px solid #a855f7; border-radius: 8px; background: rgba(168, 85, 247, 0.1); color: #c084fc; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;', textContent: 'Export JSON Colorizer Base' }),
             h('button', { id: 'aem-360-approve-btn', style: 'flex: 2; padding: 12px; font-weight: 600; cursor: pointer; border: none; border-radius: 8px; background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; font-size: 14px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;' },
                 svgIcon,
                 ' Approve & Upload'
@@ -1210,6 +1211,63 @@ async function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
     // Button Handlers
     const btnCancel = document.getElementById('aem-360-cancel-review-btn');
     const btnApprove = document.getElementById('aem-360-approve-btn');
+    const btnExport = document.getElementById('aem-360-export-colorizer-btn');
+
+    if (btnExport) {
+        btnExport.onclick = () => {
+            const finalFiles = [];
+            
+            function traverseAndBuild(node, currentPath, pathKeys = []) {
+                let myPath = currentPath;
+                let currentPathKeys = [...pathKeys];
+                
+                if (node._id) {
+                    const inputEl = document.getElementById(node._id);
+                    let newName = inputEl ? inputEl.value.trim() : node._name;
+                    
+                    let oldClean = node._name;
+                    if (window.AEM360Renamer) {
+                        const activeLocale = (dropzoneContainer && dropzoneContainer.querySelector('input[name="aem-locale"]:checked')?.value) || 'us';
+                        oldClean = window.AEM360Renamer.cleanFordName(node._name, activeLocale, true);
+                        newName = window.AEM360Renamer.cleanFordName(newName, activeLocale, true);
+                    }
+                    
+                    currentPathKeys.push({ old: node._name, new: newName, oldClean: oldClean });
+                    myPath = currentPath ? `${currentPath}/${newName}` : newName;
+                }
+                
+                if (node._info) {
+                    node._info.allFiles.forEach(f => {
+                        let finalFileName = f.new;
+                        let sortedKeys = [...currentPathKeys].sort((a, b) => b.old.length - a.old.length);
+                        sortedKeys.forEach(k => {
+                            if (k.old && k.old !== k.new) {
+                                let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
+                                if (regex.test(finalFileName)) {
+                                    finalFileName = finalFileName.replace(regex, k.new);
+                                } else if (k.oldClean && k.oldClean !== k.new) {
+                                    let cleanRegex = new RegExp(`(?<=^|-)${k.oldClean}(?=-|\\.|$)`, 'gi');
+                                    finalFileName = finalFileName.replace(cleanRegex, k.new);
+                                }
+                            }
+                        });
+                        
+                        let newFilePath = myPath ? `${myPath}/${finalFileName}` : finalFileName;
+                        finalFiles.push({
+                            path: newFilePath
+                        });
+                    });
+                }
+                
+                Object.values(node._children).forEach(child => {
+                    traverseAndBuild(child, myPath, currentPathKeys);
+                });
+            }
+            
+            traverseAndBuild(tree, '', []);
+            exportColorizerBaseJSON(finalFiles);
+        };
+    }
 
     btnCancel.onclick = () => {
         document.getElementById('aem-360-review-container').style.display = 'none';
@@ -1830,6 +1888,116 @@ function showConflictModal(collisions, onReplace, onCancel) {
     } else {
         document.body.appendChild(overlay);
     }
+}
+
+function exportColorizerBaseJSON(cleanedFiles) {
+    const modelsMap = {};
+    
+    const extInput = dropzoneContainer ? dropzoneContainer.querySelector('input[name="aem-ext"]:checked') : null;
+    const extOption = extInput ? extInput.value : 'jpeg';
+    
+    cleanedFiles.forEach(cf => {
+        const parts = cf.path.split('/');
+        if (parts.length < 2) return;
+        
+        const modelId = parts[0];
+        if (!modelsMap[modelId]) {
+            modelsMap[modelId] = {
+                model: modelId.toUpperCase(),
+                modelId: modelId,
+                exteriorColors: [],
+                wheelTypes: [],
+                interiorColors: [],
+                exterior_angles: 36,
+                exterior_start_angle: 1,
+                exterior360imageurl: `${currentBasePath}/${modelId}/exterior/{device}/{wheel}/{exteriorcolor}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.${extOption}`,
+                "exterior-slider-view": "false",
+                interior_angles: 36,
+                interior_start_angle: 1,
+                "interior-dome-view": "false",
+                interior360imageurl: `${currentBasePath}/${modelId}/interior/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.${extOption}`,
+                configuratorurl: `&trim=${modelId}`
+            };
+        }
+        const modelObj = modelsMap[modelId];
+        
+        // Find exterior / interior
+        const extIdx = parts.indexOf('exterior');
+        if (extIdx !== -1 && parts.length > extIdx + 3) {
+            const device = parts[extIdx + 1];
+            const wheel = parts[extIdx + 2];
+            const extColor = parts[extIdx + 3];
+            
+            if (wheel) {
+                const wheelShort = wheel.toLowerCase();
+                const wheelId = wheel.toUpperCase();
+                if (!modelObj.wheelTypes.some(w => w.id === wheelId)) {
+                    modelObj.wheelTypes.push({
+                        name: wheel.toUpperCase(),
+                        id: wheelId,
+                        thumbnail: "",
+                        shortName: wheelShort,
+                        costlabel: ""
+                    });
+                }
+            }
+            
+            if (extColor) {
+                const colorShort = extColor.toLowerCase();
+                const defaultName = colorShort.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                if (!modelObj.exteriorColors.some(c => c.shortName === colorShort)) {
+                    modelObj.exteriorColors.push({
+                        name: defaultName,
+                        id: "",
+                        thumbnail: "",
+                        shortName: colorShort,
+                        hexcode: "",
+                        costlabel: ""
+                    });
+                }
+            }
+        }
+        
+        const intIdx = parts.indexOf('interior');
+        if (intIdx !== -1 && parts.length > intIdx + 2) {
+            const device = parts[intIdx + 1];
+            const intColor = parts[intIdx + 2];
+            
+            if (intColor) {
+                const colorShort = intColor.toLowerCase();
+                const defaultName = colorShort.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                if (!modelObj.interiorColors.some(c => c.shortName === colorShort)) {
+                    modelObj.interiorColors.push({
+                        name: defaultName,
+                        id: "",
+                        thumbnail: "",
+                        shortName: colorShort,
+                        hexcode: "",
+                        costlabel: "",
+                        imageURL: ""
+                    });
+                }
+            }
+        }
+    });
+    
+    const finalArray = Object.values(modelsMap);
+    if (finalArray.length === 0) {
+        alert("No models or color structures detected in the renamed path structures.");
+        return;
+    }
+    
+    const jsonString = JSON.stringify(finalArray, null, 4);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `colorizer-base-config.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    logToUI(`Successfully exported Colorizer JSON Base with ${finalArray.length} model(s).`, 'success');
 }
 
 } // End of iframe guard else block

@@ -17,7 +17,28 @@
     </div>
   </div>
 
-  <div class="main-container premium-glass">
+  <div class="main-container premium-glass" style="padding: 16px; min-height: auto;">
+    
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      <button class="tab-btn active" data-target="sectionAssetInjector" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tab-icon" style="width:12px; height:12px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        Asset Injector
+      </button>
+      <button class="tab-btn" data-target="sectionColorizerCreator" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tab-icon" style="width:12px; height:12px;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+        Colorizer Creator
+      </button>
+    </div>
     <!-- Module: Asset Injector -->
     <div class="tool-section tab-content active" id="sectionAssetInjector">
       <div class="tool-header">
@@ -50,6 +71,38 @@
         <p id="aem-status" class="autofill-status"></p>
       </div>
     </div>
+
+    <!-- Module: Colorizer JSON Creator -->
+    <div class="tool-section tab-content" id="sectionColorizerCreator" style="display: none;">
+      <div class="tool-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+        <div class="tool-header-left" style="display: flex; gap: 10px; align-items: center;">
+          <div class="module-icon" style="background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+          </div>
+          <div class="module-header-info">
+            <div class="module-title-row" style="display: flex; align-items: center; gap: 6px;">
+              <h3 class="module-title" style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text);">Colorizer Creator</h3>
+              <button class="info-btn" data-module="colorizerCreator" type="button" aria-label="Show info" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 50%; color: var(--text-muted); cursor: pointer; font-size: 10px; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; padding: 0;">i</button>
+            </div>
+            <p class="module-desc" style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Create & edit AEM 360 viewer config JSON files.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-body">
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+          Create vehicle configuration JSON files including models, colors, wheels, and assets. You can start from scratch or load an existing JSON.
+        </p>
+        <button id="btn-launch-creator" class="btn-search" style="width: 100%; background: linear-gradient(135deg, #6b21a8, #a855f7); border-color: #c084fc;">LAUNCH CREATOR DASHBOARD</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- Footer: VML Branding -->
@@ -83,6 +136,7 @@
   </div>
 
   <script src="../modules/asset-injector/popup-asset-injector.js"></script>
+  <script src="../modules/colorizer-creator/popup-colorizer-creator.js"></script>
 </body>
 
 </html>

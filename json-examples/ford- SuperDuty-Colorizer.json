@@ -1,0 +1,590 @@
+[
+    {
+        "model": "Super Duty® F-250® XL STX",
+        "modelId": "f-250xl",
+        "exteriorColors": [
+            {
+                "name": "Agate Black Metallic",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "agate-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Carbonized Gray Metallic",
+                "id": "PM7",
+                "thumbnail": "",
+                "shortName": "carbonized-gray",
+                "hexcode": "#535356",
+                "costlabel": ""
+            },
+            {
+                "name": "Iconic Silver Metallic",
+                "id": "PJS",
+                "thumbnail": "",
+                "shortName": "iconic-silver",
+                "hexcode": "#b3b8c1",
+                "costlabel": ""
+            },
+            {
+                "name": "Neptune Blue",
+                "id": "PCD",
+                "thumbnail": "",
+                "shortName": "neptune-blue",
+                "hexcode": "#002e50",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Oxford White",
+                "id": "PZ1",
+                "thumbnail": "",
+                "shortName": "oxford-white",
+                "hexcode": "#e4e2e5",
+                "costlabel": ""
+            },
+            {
+                "name": "Race Red",
+                "id": "PPQ",
+                "thumbnail": "",
+                "shortName": "race-red",
+                "hexcode": "#dc0000",
+                "costlabel": "(extra cost color-option)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "17\" Argent Painted Steel Wheels w/Painted Hub Cover/Center Ornament",
+                "id": "64A",
+                "thumbnail": "",
+                "shortName": "64a",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Medium Dark Slate",
+                "id": "89S",
+                "thumbnail": "",
+                "shortName": "medium-dark",
+                "hexcode": "#7c7a75",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=xl"
+    },
+    {
+        "model": "Super Duty® F-250® XLT",
+        "modelId": "f-250xlt",
+        "exteriorColors": [
+            {
+                "name": "Agate Black Metallic",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "agate-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Carbonized Gray Metallic",
+                "id": "PM7",
+                "thumbnail": "",
+                "shortName": "carbonized-gray",
+                "hexcode": "#535356",
+                "costlabel": ""
+            },
+            {
+                "name": "Iconic Silver Metallic",
+                "id": "PJS",
+                "thumbnail": "",
+                "shortName": "iconic-silver",
+                "hexcode": "#b3b8c1",
+                "costlabel": ""
+            },
+            {
+                "name": "Marsh Gray",
+                "id": "PT9",
+                "thumbnail": "",
+                "shortName": "marsh-gray",
+                "hexcode": "#4a443a",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Neptune Blue",
+                "id": "PCD",
+                "thumbnail": "",
+                "shortName": "neptune-blue",
+                "hexcode": "#002e50",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Oxford White",
+                "id": "PZ1",
+                "thumbnail": "",
+                "shortName": "oxford-white",
+                "hexcode": "#e4e2e5",
+                "costlabel": ""
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "20\" Unique Machined and Painted Wheels",
+                "id": "64P",
+                "thumbnail": "",
+                "shortName": "64p",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Medium Dark Slate",
+                "id": "89S",
+                "thumbnail": "",
+                "shortName": "medium-dark",
+                "hexcode": "#7c7a75",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=xlt"
+    },
+    {
+        "model": "Super Duty® F-350® Lariat®",
+        "modelId": "f-350lariat",
+        "exteriorColors": [
+            {
+                "name": "Agate Black Metallic",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "agate-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Carbonized Gray Metallic",
+                "id": "PM7",
+                "thumbnail": "",
+                "shortName": "carbonized-gray",
+                "hexcode": "#535356",
+                "costlabel": ""
+            },
+            {
+                "name": "Glacier Gray Metallic TriCoat",
+                "id": "PR7",
+                "thumbnail": "",
+                "shortName": "glacier-gray",
+                "hexcode": "#b5c3d8",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Iconic Silver Metallic",
+                "id": "PJS",
+                "thumbnail": "",
+                "shortName": "iconic-silver",
+                "hexcode": "#b3b8c1",
+                "costlabel": ""
+            },
+            {
+                "name": "Marsh Gray",
+                "id": "PT9",
+                "thumbnail": "",
+                "shortName": "marsh-gray",
+                "hexcode": "#4a443a",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Neptune Blue",
+                "id": "PCD",
+                "thumbnail": "",
+                "shortName": "neptune-blue",
+                "hexcode": "#002e50",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Oxford White",
+                "id": "PZ1",
+                "thumbnail": "",
+                "shortName": "oxford-white",
+                "hexcode": "#e4e2e5",
+                "costlabel": ""
+            },
+            {
+                "name": "Race Red",
+                "id": "PPQ",
+                "thumbnail": "",
+                "shortName": "race-red",
+                "hexcode": "#dc0000",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Ruby Red Metallic Tinted Clearcoat",
+                "id": "PRR",
+                "thumbnail": "",
+                "shortName": "ruby-red",
+                "hexcode": "#ab0300",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Star White Metallic TriCoat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "star-white",
+                "hexcode": "#e4e4e0",
+                "costlabel": "(extra cost color-option)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "18\" Bright Machined and Carbonized Gray Painted Aluminum Wheels",
+                "id": "64C",
+                "thumbnail": "",
+                "shortName": "64c",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Baja",
+                "id": "89J",
+                "thumbnail": "",
+                "shortName": "baja",
+                "hexcode": "#a98e7a",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Black Onyx",
+                "id": "89B",
+                "thumbnail": "",
+                "shortName": "black-onyx",
+                "hexcode": "#1b1a1a",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=lariat"
+    },
+    {
+        "model": "Super Duty® F-250® Lariat® Tremor",
+        "modelId": "f-250lariat",
+        "exteriorColors": [
+            {
+                "name": "Agate Black Metallic",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "agate-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Carbonized Gray Metallic",
+                "id": "PM7",
+                "thumbnail": "",
+                "shortName": "carbonized-gray",
+                "hexcode": "#535356",
+                "costlabel": ""
+            },
+            {
+                "name": "Glacier Gray Metallic TriCoat",
+                "id": "PR7",
+                "thumbnail": "",
+                "shortName": "glacier-gray",
+                "hexcode": "#b5c3d8",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Iconic Silver Metallic",
+                "id": "PJS",
+                "thumbnail": "",
+                "shortName": "iconic-silver",
+                "hexcode": "#b3b8c1",
+                "costlabel": ""
+            },
+            {
+                "name": "Marsh Gray",
+                "id": "PT9",
+                "thumbnail": "",
+                "shortName": "marsh-gray",
+                "hexcode": "#4a443a",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Neptune Blue",
+                "id": "PCD",
+                "thumbnail": "",
+                "shortName": "neptune-blue",
+                "hexcode": "#002e50",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Oxford White",
+                "id": "PZ1",
+                "thumbnail": "",
+                "shortName": "oxford-white",
+                "hexcode": "#e4e2e5",
+                "costlabel": ""
+            },
+            {
+                "name": "Race Red",
+                "id": "PPQ",
+                "thumbnail": "",
+                "shortName": "race-red",
+                "hexcode": "#dc0000",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Ruby Red Metallic Tinted Clearcoat",
+                "id": "PRR",
+                "thumbnail": "",
+                "shortName": "ruby-red",
+                "hexcode": "#ab0300",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Star White Metallic TriCoat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "star-white",
+                "hexcode": "#e4e4e0",
+                "costlabel": "(extra cost color-option)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "18\" Bright Machined and Carbonized Gray Painted Aluminum Wheels",
+                "id": "64C",
+                "thumbnail": "",
+                "shortName": "64c",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Baja",
+                "id": "89J",
+                "thumbnail": "",
+                "shortName": "baja",
+                "hexcode": "#a98e7a",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Black Onyx",
+                "id": "89B",
+                "thumbnail": "",
+                "shortName": "black-onyx",
+                "hexcode": "#1b1a1a",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=lariat"
+    },
+    {
+        "model": "Super Duty® F-350® King Ranch®",
+        "modelId": "f-350kingranch",
+        "exteriorColors": [
+            {
+                "name": "Agate Black Metallic",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "agate-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Neptune Blue",
+                "id": "PCD",
+                "thumbnail": "",
+                "shortName": "neptune-blue",
+                "hexcode": "#002e50",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Oxford White",
+                "id": "PZ1",
+                "thumbnail": "",
+                "shortName": "oxford-white",
+                "hexcode": "#e4e2e5",
+                "costlabel": ""
+            },
+            {
+                "name": "Ruby Red Metallic Tinted Clearcoat",
+                "id": "PRR",
+                "thumbnail": "",
+                "shortName": "ruby-red",
+                "hexcode": "#ab0300",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Star White Metallic TriCoat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "star-white",
+                "hexcode": "#e4e4e0",
+                "costlabel": "(extra cost color-option)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "20\" Bright Machined Aluminum Wheels w/Light Caribou Painted Pockets; Light Caribou Wheel Ornament with King Ranch® Logo",
+                "id": "643",
+                "thumbnail": "",
+                "shortName": "643",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Java",
+                "id": "89P",
+                "thumbnail": "",
+                "shortName": "java",
+                "hexcode": "#2B2111",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=kingranch"
+    },
+    {
+        "model": "Super Duty® F-250® Platinum® Plus",
+        "modelId": "f-250platinum",
+        "exteriorColors": [
+            {
+                "name": "Agate Black Metallic",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "agate-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Carbonized Gray Metallic",
+                "id": "PM7",
+                "thumbnail": "",
+                "shortName": "carbonized-gray",
+                "hexcode": "#535356",
+                "costlabel": ""
+            },
+            {
+                "name": "Glacier Gray Metallic TriCoat",
+                "id": "PR7",
+                "thumbnail": "",
+                "shortName": "glacier-gray",
+                "hexcode": "#b5c3d8",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Iconic Silver Metallic",
+                "id": "PJS",
+                "thumbnail": "",
+                "shortName": "iconic-silver",
+                "hexcode": "#b3b8c1",
+                "costlabel": ""
+            },
+            {
+                "name": "Marsh Gray",
+                "id": "PT9",
+                "thumbnail": "",
+                "shortName": "marsh-gray",
+                "hexcode": "#4a443a",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Neptune Blue",
+                "id": "PCD",
+                "thumbnail": "",
+                "shortName": "neptune-blue",
+                "hexcode": "#002e50",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Ruby Red Metallic Tinted Clearcoat",
+                "id": "PRR",
+                "thumbnail": "",
+                "shortName": "ruby-red",
+                "hexcode": "#ab0300",
+                "costlabel": "(extra cost color-option)"
+            },
+            {
+                "name": "Star White Metallic TriCoat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "star-white",
+                "hexcode": "#e4e4e0",
+                "costlabel": "(extra cost color-option)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "20\" Bright Machined and Carbonized Gray High-Gloss Painted Aluminum Wheels",
+                "id": "64L",
+                "thumbnail": "",
+                "shortName": "64l",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Smoked Truffle",
+                "id": "89T",
+                "thumbnail": "",
+                "shortName": "smoked-truffle",
+                "hexcode": "#3b3939",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/ford/en_us/images/superduty/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg",
+        "configuratorurl": "&trim=f-250platinum"
+    }
+]

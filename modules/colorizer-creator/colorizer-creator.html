@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colorizer JSON Creator — VML AEM 360 Tool</title>
+  <link rel="stylesheet" href="colorizer-creator.css">
+</head>
+
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <img src="../../assets/logo-vml.png" alt="VML Logo" class="app-logo">
+      <div class="header-titles">
+        <h1 class="app-title">Colorizer JSON Creator</h1>
+        <p class="app-subtitle">AEM 360 Component Configuration Assistant</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="badge badge-tech">VML Automation Squad</span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- Left Workspace Panel -->
+    <section class="panel panel-workspace">
+      <!-- Workspace Navigation Tabs -->
+      <nav class="workspace-tabs">
+        <button class="w-tab-btn active" data-tab="tabImport">
+          <svg class="w-tab-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Import JSON
+        </button>
+        <button class="w-tab-btn" data-tab="tabModels">
+          <svg class="w-tab-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" />
+            <rect x="14" y="3" width="7" height="5" />
+            <rect x="14" y="12" width="7" height="9" />
+            <rect x="3" y="16" width="7" height="5" />
+          </svg>
+          Models & General
+        </button>
+        <button class="w-tab-btn" data-tab="tabExteriorColors">
+          <svg class="w-tab-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+            <path
+              d="M12 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-5 5A1.5 1.5 0 1 1 7 8a1.5 1.5 0 0 1 0 3zm10 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm-7 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+          </svg>
+          Exterior Colors
+        </button>
+        <button class="w-tab-btn" data-tab="tabWheels">
+          <svg class="w-tab-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="2" />
+            <line x1="12" y1="2" x2="12" y2="22" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <line x1="16.24" y1="7.76" x2="7.76" y2="16.24" />
+            <line x1="16.24" y1="16.24" x2="7.76" y2="7.76" />
+          </svg>
+          Wheels
+        </button>
+        <button class="w-tab-btn" data-tab="tabInteriorColors">
+          <svg class="w-tab-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Interior Colors
+        </button>
+      </nav>
+
+      <!-- Workspace Content Area -->
+      <div class="workspace-content">
+
+        <!-- Tab 1: Import JSON -->
+        <div class="w-tab-pane active" id="tabImport">
+          <div class="card card-hero">
+            <h3>Import Existing Configuration (Optional)</h3>
+            
+            <div class="card-info" style="margin-bottom: 16px;">
+              <svg class="info-trigger-icon" style="flex-shrink: 0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span><strong>Starting from scratch?</strong> This step is entirely optional. To build a new AEM 360 configuration from scratch, simply skip this tab and head straight to the <a href="#" onclick="document.querySelector('[data-tab=\'tabModels\']').click(); return false;">Models & General</a> tab to add your first vehicle model.</span>
+            </div>
+
+            <p>Paste an existing Colorizer JSON configuration or drag-and-drop a file below to populate the forms and
+              start modifying. This is the fastest way to add new colors or wheels to an active configuration.</p>
+
+            <div id="dropzone" class="dropzone-area">
+              <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span>Drag & Drop Colorizer JSON file here, or click to upload</span>
+              <input type="file" id="file-uploader" accept=".json" style="display: none;">
+            </div>
+
+            <div class="form-group" style="margin-top: 15px;">
+              <label for="import-text" class="field-label">Or Paste JSON Data:</label>
+              <textarea id="import-text"
+                placeholder="[ { &quot;model&quot;: &quot;Corsair Hybrid Premiere&quot;, ... } ]"
+                style="min-height: 200px; font-family: monospace;"></textarea>
+            </div>
+
+            <div class="actions-row">
+              <button id="btn-import-json" class="btn btn-primary">
+                <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Load Configuration
+              </button>
+              <button id="btn-clear-workspace" class="btn btn-secondary">Clear Workspace</button>
+            </div>
+            <div id="import-status" class="status-msg" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Models & General -->
+        <div class="w-tab-pane" id="tabModels">
+          <!-- Models List Card -->
+          <div class="card">
+            <div class="card-header-flex">
+              <h3>Vehicle Models</h3>
+              <button id="btn-add-model" class="btn btn-sm btn-primary">+ Add New Model</button>
+            </div>
+
+            <div class="model-selector-bar" id="model-selector-list">
+              <!-- Rendered dynamically -->
+              <span class="no-models-msg">No models available. Click "+ Add New Model" to start.</span>
+            </div>
+          </div>
+
+          <!-- Model Edit Form Card -->
+          <div class="card" id="card-model-form" style="display: none;">
+            <div class="card-header-flex">
+              <h3 id="current-editing-model-title">Edit Model Details</h3>
+              <button id="btn-delete-model" class="btn btn-sm btn-danger">Delete This Model</button>
+            </div>
+
+            <form id="model-form" class="grid-form">
+              <!-- Row 1: Model Name & ID -->
+              <div class="form-group">
+                <label for="m-name" class="field-label">Model Display Name:</label>
+                <input type="text" id="m-name" placeholder="e.g. Corsair Hybrid Premiere" required>
+              </div>
+              <div class="form-group">
+                <label for="m-id" class="field-label">Model ID (NASAPI):</label>
+                <input type="text" id="m-id" placeholder="e.g. premiere" required>
+                <span class="input-tip">Lowercase, used in URL parameters and folder matching.</span>
+              </div>
+
+              <!-- Row 1.5: Brand & Locale Selection -->
+              <div class="form-group">
+                <label class="field-label">Brand:</label>
+                <div class="segmented-control">
+                  <label id="lbl-brand-ford">
+                    <input type="radio" name="m-brand" id="m-brand-ford" value="ford">
+                    Ford
+                  </label>
+                  <label id="lbl-brand-lincoln">
+                    <input type="radio" name="m-brand" id="m-brand-lincoln" value="lincoln">
+                    Lincoln
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="field-label">Locale (Market):</label>
+                <div class="segmented-control">
+                  <label id="lbl-locale-us">
+                    <input type="radio" name="m-locale" id="m-locale-us" value="en_us">
+                    en_us (USA)
+                  </label>
+                  <label id="lbl-locale-ca">
+                    <input type="radio" name="m-locale" id="m-locale-ca" value="en_ca">
+                    en_ca (Canada)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Row 1.7: Model Year & File Extension -->
+              <div class="form-group">
+                <label for="m-year" class="field-label">Model Year:</label>
+                <input type="text" id="m-year" placeholder="e.g. 2027" value="2027" required>
+              </div>
+              <div class="form-group">
+                <label class="field-label">File Extension:</label>
+                <div class="segmented-control">
+                  <label id="lbl-ext-jpeg">
+                    <input type="radio" name="m-ext" id="m-ext-jpeg" value="jpeg">
+                    .jpeg
+                  </label>
+                  <label id="lbl-ext-jpg">
+                    <input type="radio" name="m-ext" id="m-ext-jpg" value="jpg">
+                    .jpg
+                  </label>
+                </div>
+              </div>
+
+              <!-- Row 1.8: Configurator Suffix & Default Extra Cost Label Text -->
+              <div class="form-group">
+                <label for="m-configurator" class="field-label">Configurator URL Suffix:</label>
+                <input type="text" id="m-configurator" placeholder="e.g. &trim=premiere">
+              </div>
+              <div class="form-group">
+                <label for="m-extracost-label" class="field-label">Default Extra Cost Label Text:</label>
+                <input type="text" id="m-extracost-label" placeholder="e.g. (extra-cost colour)"
+                  value="(extra-cost colour)">
+                <span class="input-tip">Used when "Extra Cost" is checked for colors.</span>
+              </div>
+
+              <div class="section-divider">Exterior Angles & URL Templates</div>
+
+              <!-- Row 3: Ext Angles, Ext Start Angle, Ext Slider View -->
+              <div class="form-group col-3">
+                <label for="m-ext-angles" class="field-label">Exterior Angles:</label>
+                <input type="number" id="m-ext-angles" value="36" min="1" required>
+              </div>
+              <div class="form-group col-3">
+                <label for="m-ext-start" class="field-label">Exterior Start Angle:</label>
+                <input type="number" id="m-ext-start" value="1" min="0" required>
+              </div>
+              <div class="form-group col-3">
+                <label for="m-ext-slider" class="field-label">Exterior Slider View:</label>
+                <select id="m-ext-slider">
+                  <option value="false">False</option>
+                  <option value="true">True</option>
+                </select>
+              </div>
+
+              <!-- Row 4: Exterior URL Template -->
+              <div class="form-group col-span-2">
+                <label for="m-ext-url" class="field-label">Exterior 360 Image URL Template:</label>
+                <input type="text" id="m-ext-url"
+                  placeholder="e.g. /content/dam/na/lincoln/.../{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg"
+                  required>
+                <span class="input-tip">Variables: {modelId}, {view}, {device}, {exteriorcolor}, {wheel},
+                  {exterior_start_angle}</span>
+              </div>
+
+              <div class="section-divider">Interior Angles & URL Templates</div>
+
+              <!-- Row 5: Int Angles, Int Start Angle, Int Dome View -->
+              <div class="form-group col-3">
+                <label for="m-int-angles" class="field-label">Interior Angles:</label>
+                <input type="number" id="m-int-angles" value="36" min="1" required>
+              </div>
+              <div class="form-group col-3">
+                <label for="m-int-start" class="field-label">Interior Start Angle:</label>
+                <input type="number" id="m-int-start" value="1" min="0" required>
+              </div>
+              <div class="form-group col-3">
+                <label for="m-int-dome" class="field-label">Interior Dome View:</label>
+                <select id="m-int-dome">
+                  <option value="false">False</option>
+                  <option value="true">True</option>
+                </select>
+              </div>
+
+              <!-- Row 6: Interior URL Template -->
+              <div class="form-group col-span-2">
+                <label for="m-int-url" class="field-label">Interior 360 Image URL Template:</label>
+                <input type="text" id="m-int-url"
+                  placeholder="e.g. /content/dam/na/lincoln/.../{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg"
+                  required>
+                <span class="input-tip">Variables: {modelId}, {view}, {device}, {interiorcolor},
+                  {interior_start_angle}</span>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tab 3: Exterior Colors -->
+        <div class="w-tab-pane" id="tabExteriorColors">
+          <div class="card select-model-tip" style="display: block;">
+            <p>Please select or add a model under the "Models & General" tab to manage its exterior colors.</p>
+          </div>
+
+          <div class="color-manager-section" style="display: none;">
+            <!-- Add Exterior Color Card -->
+            <div class="card">
+              <h3>Add Exterior Color</h3>
+              <form id="add-extcolor-form" class="color-form">
+                <div class="form-group">
+                  <label for="ec-name" class="field-label">Color Name:</label>
+                  <input type="text" id="ec-name" placeholder="e.g. Infinite Black" required>
+                </div>
+                <div class="form-group">
+                  <label for="ec-id" class="field-label">
+                    VDM Sales Code (ID):
+                    <span class="info-trigger">
+                      <svg class="info-trigger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span class="tooltip-info">
+                        This is an example from another model in VDM where you can find vmd sales code and more info. Always use Hex Colours from official router. Locate your actual model to find the correct information: <a href="https://author-p154363-e1620826.adobeaemcloud.com/ui#/aem/vdm.html/browse/content/vdm_ford/live/en_us/ford/nameplate/explorer/2027/model/active/part/painttype" target="_blank">VDM Paint Type Example</a>. On VDM click "PREVIEW" to see the list.
+                      </span>
+                    </span>
+                  </label>
+                  <input type="text" id="ec-id" placeholder="e.g. PUM" required>
+                </div>
+                <div class="form-group">
+                  <label for="ec-hex" class="field-label">Hex Code:</label>
+                  <div class="color-picker-input-group">
+                    <input type="color" id="ec-picker" value="#1b1b1d">
+                    <input type="text" id="ec-hex" placeholder="#1b1b1d" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="ec-extra-cost">
+                    <span class="checkbox-checkmark"></span>
+                    Extra Cost Option
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label for="ec-short" class="field-label">Short Name (Path slug):</label>
+                  <input type="text" id="ec-short" placeholder="e.g. infinite-black">
+                  <span class="input-tip">Auto-generated from name, edit if you need custom naming.</span>
+                </div>
+
+                <div class="form-group">
+                  <button type="submit" class="btn btn-primary">+ Add Color</button>
+                </div>
+              </form>
+              <div id="ec-catalog-container" class="color-catalog-section" style="margin-top: 18px; border-top: 1px dashed var(--border); padding-top: 12px; display: none;">
+                <span class="field-label" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--text-secondary); display: block;">Quick Add from Catalog:</span>
+                <div id="ec-catalog-list" class="catalog-pills" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+              </div>
+            </div>
+
+            <!-- List Exterior Colors Card -->
+            <div class="card">
+              <h3>Existing Exterior Colors (<span id="extcolor-count">0</span>)</h3>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 60px;">Swatch</th>
+                      <th>Name / Short Name</th>
+                      <th style="width: 100px;">VDM ID</th>
+                      <th style="width: 150px;">Cost Label</th>
+                      <th style="width: 80px; text-align: center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="extcolor-list-rows">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Wheels -->
+        <div class="w-tab-pane" id="tabWheels">
+          <div class="card select-model-tip" style="display: block;">
+            <p>Please select or add a model under the "Models & General" tab to manage its wheel types.</p>
+          </div>
+
+          <div class="wheels-manager-section" style="display: none;">
+            <!-- Add Wheel Card -->
+            <div class="card">
+              <h3>Add Wheel Type</h3>
+              <form id="add-wheel-form" class="color-form">
+                <div class="form-group">
+                  <label for="w-name" class="field-label">Wheel Description (Name):</label>
+                  <input type="text" id="w-name" placeholder="e.g. 19” Bright Machined Aluminum Wheels" required>
+                </div>
+                <div class="form-group">
+                  <label for="w-id" class="field-label">
+                    VDM Sales Code (ID):
+                    <span class="info-trigger">
+                      <svg class="info-trigger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span class="tooltip-info">
+                        This is an example from another model in VDM where you can find vmd sales code and more info. Locate your actual model to find the correct information: <a href="https://author-p154363-e1620826.adobeaemcloud.com/ui#/aem/vdm.html/browse/content/vdm_ford/live/en_us/ford/nameplate/explorer/2027/model/active/part/wheeltype" target="_blank">VDM Wheel Type Example</a>. On VDM click "PREVIEW" to see the list.
+                      </span>
+                    </span>
+                  </label>
+                  <input type="text" id="w-id" placeholder="e.g. 64R" required>
+                </div>
+                <div class="form-group">
+                  <label for="w-short" class="field-label">Short Name:</label>
+                  <input type="text" id="w-short" placeholder="e.g. 64r">
+                  <span class="input-tip">Auto-generated as lowercase of VDM ID.</span>
+                </div>
+
+                <div class="form-group">
+                  <button type="submit" class="btn btn-primary">+ Add Wheel</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- List Wheels Card -->
+            <div class="card">
+              <h3>Existing Wheel Types (<span id="wheel-count">0</span>)</h3>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Wheel Description</th>
+                      <th style="width: 120px;">VDM ID</th>
+                      <th style="width: 120px;">Short Name</th>
+                      <th style="width: 80px; text-align: center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wheel-list-rows">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Interior Colors -->
+        <div class="w-tab-pane" id="tabInteriorColors">
+          <div class="card select-model-tip" style="display: block;">
+            <p>Please select or add a model under the "Models & General" tab to manage its interior colors.</p>
+          </div>
+
+          <div class="interior-manager-section" style="display: none;">
+            <!-- Add Interior Color Card -->
+            <div class="card">
+              <h3>Add Interior Color</h3>
+              <form id="add-intcolor-form" class="color-form">
+                <div class="form-group">
+                  <label for="ic-name" class="field-label">Interior Color Name:</label>
+                  <input type="text" id="ic-name" placeholder="e.g. Ebony" required>
+                </div>
+                <div class="form-group">
+                  <label for="ic-id" class="field-label">
+                    VDM Sales Code (ID):
+                    <span class="info-trigger">
+                      <svg class="info-trigger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span class="tooltip-info">
+                        This is an example from another model in VDM where you can find vmd sales code and more info. Always use Hex Colours from official router. Locate your actual model to find the correct information: <a href="https://author-p154363-e1620826.adobeaemcloud.com/ui#/aem/vdm.html/browse/content/vdm_ford/live/en_us/ford/nameplate/explorer/2027/model/active/part/interiortrimcolour" target="_blank">VDM Interior Trim Color Example</a>. On VDM click "PREVIEW" to see the list.
+                      </span>
+                    </span>
+                  </label>
+                  <input type="text" id="ic-id" placeholder="e.g. 89E" required>
+                </div>
+                <div class="form-group">
+                  <label for="ic-hex" class="field-label">Hex Code:</label>
+                  <div class="color-picker-input-group">
+                    <input type="color" id="ic-picker" value="#1b1b1d">
+                    <input type="text" id="ic-hex" placeholder="#1b1b1d" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="ic-extra-cost">
+                    <span class="checkbox-checkmark"></span>
+                    Extra Cost Option
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label for="ic-short" class="field-label">Short Name (Path slug):</label>
+                  <input type="text" id="ic-short" placeholder="e.g. ebony">
+                  <span class="input-tip">Auto-generated from name.</span>
+                </div>
+                <div class="form-group">
+                  <label for="ic-image" class="field-label">Interior Image URL (Optional):</label>
+                  <input type="text" id="ic-image" placeholder="e.g. /content/dam/..." value="">
+                  <span class="input-tip">Direct URL for interior swatches (if required).</span>
+                </div>
+
+                <div class="form-group">
+                  <button type="submit" class="btn btn-primary">+ Add Interior Color</button>
+                </div>
+              </form>
+              <div id="ic-catalog-container" class="color-catalog-section" style="margin-top: 18px; border-top: 1px dashed var(--border); padding-top: 12px; display: none;">
+                <span class="field-label" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--text-secondary); display: block;">Quick Add from Catalog:</span>
+                <div id="ic-catalog-list" class="catalog-pills" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+              </div>
+            </div>
+
+            <!-- List Interior Colors Card -->
+            <div class="card">
+              <h3>Existing Interior Colors (<span id="intcolor-count">0</span>)</h3>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 60px;">Swatch</th>
+                      <th>Name / Short Name</th>
+                      <th style="width: 100px;">VDM ID</th>
+                      <th style="width: 150px;">Cost Label</th>
+                      <th>Image URL</th>
+                      <th style="width: 80px; text-align: center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="intcolor-list-rows">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Right Live Preview & Output Panel -->
+    <section class="panel panel-preview">
+      <div class="preview-header">
+        <div class="preview-title-row">
+          <h2 class="panel-title">Live JSON Output</h2>
+          <div class="badge badge-success" id="validation-badge">Valid</div>
+        </div>
+        <p class="panel-subtitle">This updates in real-time as you modify models, colors, or wheels.</p>
+      </div>
+
+      <div class="preview-body">
+        <div class="code-container">
+          <button id="btn-copy-json" class="btn-copy-code" title="Copy to clipboard">
+            <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            Copy
+          </button>
+          <pre><code id="json-preview">[]</code></pre>
+        </div>
+      </div>
+
+      <div class="preview-footer">
+        <div id="validation-summary" class="validation-box">
+          <span class="val-title">Validation checklist:</span>
+          <ul id="validation-list" class="val-list">
+            <!-- Rendered dynamically -->
+          </ul>
+        </div>
+
+        <button id="btn-download-json" class="btn btn-large btn-primary" style="width: 100%; justify-content: center;">
+          <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Download JSON Configuration File
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="colorizer-creator.js"></script>
+</body>
+
+</html>

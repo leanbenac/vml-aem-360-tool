@@ -1,0 +1,280 @@
+[
+    {
+        "model": "Navigator Premiere",
+        "modelId": "premiere",
+        "exteriorColors": [
+            {
+                "name": "Nocturnal Blue Metallic Clearcoat",
+                "id": "PC1",
+                "thumbnail": "",
+                "shortName": "nocturnal-blue",
+                "hexcode": "#476372",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Bronze Fire Tinted Clearcoat",
+                "id": "PH9",
+                "thumbnail": "",
+                "shortName": "bronze-fire",
+                "hexcode": "#7a3518",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Grey Mist Metallic Tri-Coat",
+                "id": "PR7",
+                "thumbnail": "",
+                "shortName": "gray-mist",
+                "hexcode": "#9ea6b8",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Infinite Black Metallic Clearcoat",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "infinite-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Pristine White Metallic Tri-Coat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "pristine-white",
+                "hexcode": "#e6e5e1",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Starlight Grey Premium Colorant",
+                "id": "PHY",
+                "thumbnail": "",
+                "shortName": "starlight-gray",
+                "hexcode": "#3e3e35",
+                "costlabel": "(extra-cost colour)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "22\" Dark Tarnished Aluminum Wheel with Bright-Machined Finish",
+                "id": "64E",
+                "thumbnail": "",
+                "shortName": "64E",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": " Afterglow",
+                "id": " 891",
+                "thumbnail": "",
+                "shortName": "afterglow",
+                "hexcode": "#e9e4d4",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Black Onyx",
+                "id": " 89W",
+                "thumbnail": "",
+                "shortName": "black-onyx",
+                "hexcode": "#1b1a1a",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/lincoln/en_ca/images/navigator/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}_{exteriorcolor}_{wheel}.jpg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/lincoln/en_ca/images/navigator/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpg",
+        "configuratorurl": "&trim=premiere"
+    },
+    {
+        "model": "Navigator Reserve",
+        "modelId": "reserve",
+        "exteriorColors": [
+            {
+                "name": "Nocturnal Blue Metallic Clearcoat",
+                "id": "PC1",
+                "thumbnail": "",
+                "shortName": "nocturnal-blue",
+                "hexcode": "#476372",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Bronze Fire Tinted Clearcoat",
+                "id": "PH9",
+                "thumbnail": "",
+                "shortName": "bronze-fire",
+                "hexcode": "#7a3518",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Grey Mist Metallic Tri-Coat",
+                "id": "PR7",
+                "thumbnail": "",
+                "shortName": "gray-mist",
+                "hexcode": "#9ea6b8",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Infinite Black Metallic Clearcoat",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "infinite-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Pristine White Metallic Tri-Coat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "pristine-white",
+                "hexcode": "#e6e5e1",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Starlight Grey Premium Colorant",
+                "id": "PHY",
+                "thumbnail": "",
+                "shortName": "starlight-gray",
+                "hexcode": "#3e3e35",
+                "costlabel": "(extra-cost colour)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "22\" Dark Tarnished Aluminum Wheel with Bright-Machined Finish",
+                "id": "64E",
+                "thumbnail": "",
+                "shortName": "64E",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Afterglow",
+                "id": "891",
+                "thumbnail": "",
+                "shortName": "afterglow",
+                "hexcode": "#e9e4d4",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Hot Chocolate",
+                "id": "89X",
+                "thumbnail": "",
+                "shortName": "hot-chocolate",
+                "hexcode": "#361e15",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Black Onyx",
+                "id": "89J",
+                "thumbnail": "",
+                "shortName": "black-onyx",
+                "hexcode": "#1b1a1a",
+                "costlabel": "",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/lincoln/en_ca/images/navigator/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}_{exteriorcolor}_{wheel}.jpg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/lincoln/en_ca/images/navigator/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpg",
+        "configuratorurl": "&trim=reserve"
+    },
+    {
+        "model": "Navigator Black Label",
+        "modelId": "black-label",
+        "exteriorColors": [
+            {
+                "name": "Frosted Fig Premium Colorant",
+                "id": "PKS",
+                "thumbnail": "",
+                "shortName": "frosted-fig",
+                "hexcode": "#755956",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Chroma Caviar Dark Grey Metallic Clearcoat",
+                "id": "PXF",
+                "thumbnail": "",
+                "shortName": "chroma-caviar",
+                "hexcode": "#545456",
+                "costlabel": "(extra-cost colour)"
+            },
+            {
+                "name": "Infinite Black Metallic Clearcoat",
+                "id": "PUM",
+                "thumbnail": "",
+                "shortName": "infinite-black",
+                "hexcode": "#1b1b1d",
+                "costlabel": ""
+            },
+            {
+                "name": "Pristine White Metallic Tri-Coat",
+                "id": "PAZ",
+                "thumbnail": "",
+                "shortName": "pristine-white",
+                "hexcode": "#e6e5e1",
+                "costlabel": "(extra-cost colour)"
+            }
+        ],
+        "wheelTypes": [
+            {
+                "name": "24\" Radiant Copper Aluminum Wheel with Bright Machined Finish",
+                "id": "64X",
+                "thumbnail": "",
+                "shortName": "64X",
+                "costlabel": ""
+            }
+        ],
+        "interiorColors": [
+            {
+                "name": "Invitation",
+                "id": "89J",
+                "thumbnail": "",
+                "shortName": "invitation-black-onyx",
+                "hexcode": "#1b1b1d",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Enlighten",
+                "id": "89V",
+                "thumbnail": "",
+                "shortName": "enlighten-warm-horizon",
+                "hexcode": "#907562",
+                "costlabel": "",
+                "imageURL": ""
+            },
+            {
+                "name": "Atmospheric",
+                "id": "89F",
+                "thumbnail": "",
+                "shortName": "atmo-salt-crystal-gray",
+                "hexcode": "#99a6b8",
+                "costlabel": "(extra-cost colour option)",
+                "imageURL": ""
+            }
+        ],
+        "exterior_angles": 36,
+        "exterior_start_angle": 1,
+        "exterior360imageurl": "/content/dam/na/lincoln/en_ca/images/navigator/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}_{exteriorcolor}_{wheel}.jpg",
+        "exterior-slider-view": "false",
+        "interior_angles": 36,
+        "interior_start_angle": 1,
+        "interior-dome-view": "false",
+        "interior360imageurl": "/content/dam/na/lincoln/en_ca/images/navigator/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpg",
+        "configuratorurl": "&trim=black-label"
+    }
+]
