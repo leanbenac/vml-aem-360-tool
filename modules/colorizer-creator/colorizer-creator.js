@@ -59,7 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const mIntStart = document.getElementById('m-int-start');
   const mIntDome = document.getElementById('m-int-dome');
   const mIntUrl = document.getElementById('m-int-url');
-
+  
+  // Smart Parse elements
+  const mSmartPaste = document.getElementById('m-smart-paste');
+  const btnSmartParse = document.getElementById('btn-smart-parse');
   // Sub-tab selectors
   const selectModelTips = document.querySelectorAll('.select-model-tip');
   const colorManagerSection = document.querySelector('.color-manager-section');
@@ -299,7 +302,303 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ── SMART PARSER (ROUTER DATA) ────────────────────────────────────────
+  if (btnSmartParse) {
+    btnSmartParse.addEventListener('click', () => {
+      const text = mSmartPaste.value;
+      if (!text.trim()) return;
 
+      let parsedExterior = [];
+      let parsedInterior = [];
+      let parsedWheels = [];
+
+      function extractField(block, fieldName) {
+        const regex = new RegExp(`^${fieldName}\\s*\\n(.+)`, 'm');
+        const match = block.match(regex);
+        return match ? match[1].trim() : '';
+      }
+
+      // Helper to generate shortName with max 2 words (or 3 if conflict)
+      function generateExteriorShortName(name, existingSet) {
+        const fullSlug = toShortName(name);
+        const words = fullSlug.split('-');
+        if (words.length <= 2) return fullSlug;
+        
+        let attempt = words.slice(0, 2).join('-');
+        if (!existingSet.has(attempt)) {
+          existingSet.add(attempt);
+          return attempt;
+        }
+        
+        attempt = words.slice(0, 3).join('-');
+        if (!existingSet.has(attempt)) {
+          existingSet.add(attempt);
+          return attempt;
+        }
+        
+        existingSet.add(fullSlug);
+        return fullSlug;
+      }
+
+      // Split text to separate interior from exterior if the word Interior is present
+      // after a separator line.
+      const splitByInterior = text.split(/_{10,}\s*\n\s*Interior/i);
+      const exteriorText = splitByInterior[0] || text;
+      const interiorText = splitByInterior[1] || '';
+
+      const hexRegex = /(#[A-Fa-f0-9]{6})\s*-\s*([^\n\(]+?)(?:\s*\((.*?)\))?\s*$/gm;
+      let hexMatch;
+
+      // Parse Paint Types (Exterior Colors)
+      const usedExtShortNames = new Set();
+      const paintMatch = text.split(/Part Class\s*-\s*Paint Type/i);
+      
+      let parsedByTrim = {}; // To store trim-specific colors (new format)
+
+      if (paintMatch.length > 1) {
+        const paintText = paintMatch[1].split(/Part Class\s*-/i)[0];
+        const parts = paintText.split(/Part\s*-/).slice(1);
+        
+        parts.forEach(p => {
+          const name = extractField(p, 'Name') || extractField(p, 'Display Name');
+          const salesCode = extractField(p, 'Sales Code');
+          const id = extractField(p, 'Id');
+          const color = extractField(p, 'Color');
+          if (name) {
+            parsedExterior.push({
+              name: name,
+              id: salesCode || id || '',
+              hexcode: color || '#1b1b1d',
+              costlabel: '',
+              shortName: generateExteriorShortName(name, usedExtShortNames)
+            });
+          }
+        });
+      } else {
+        // Fallback to the new format (Hierarchical by Trim)
+        function parseTrimsFromSection(sectionText, isInterior) {
+          const chunks = sectionText.split(/^Trim\s*\n/m);
+          for (let i = 1; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            const newlineIdx = chunk.indexOf('\n');
+            const trimName = chunk.substring(0, newlineIdx).trim();
+            if (!trimName) continue;
+            
+            const trimKey = trimName.toLowerCase();
+            if (!parsedByTrim[trimKey]) {
+              parsedByTrim[trimKey] = { exterior: [], interior: [] };
+            }
+            
+            const colorsList = isInterior ? parsedByTrim[trimKey].interior : parsedByTrim[trimKey].exterior;
+            const usedShortNames = new Set();
+            
+            const localHexRegex = /(#[A-Fa-f0-9]{6})\s*-\s*([^\n\(]+?)(?:\s*\((.*?)\))?\s*$/gm;
+            let localHexMatch;
+            while ((localHexMatch = localHexRegex.exec(chunk)) !== null) {
+              const hex = localHexMatch[1].trim();
+              const name = localHexMatch[2].trim();
+              const isExtraCost = localHexMatch[3] && localHexMatch[3].toLowerCase().includes('extra-cost');
+              colorsList.push({
+                name: name,
+                id: '', // Not provided in this format
+                hexcode: hex,
+                costlabel: isExtraCost ? '(extra-cost colour)' : '',
+                shortName: isInterior ? toShortName(name) : generateExteriorShortName(name, usedShortNames),
+                imageURL: ''
+              });
+            }
+          }
+        }
+
+        parseTrimsFromSection(exteriorText, false);
+      }
+
+      // Parse Interior Trim Colour
+      const intMatch = text.split(/Part Class\s*-\s*Interior Trim Colour/i);
+      if (intMatch.length > 1) {
+        const intText = intMatch[1].split(/Part Class\s*-/i)[0];
+        const parts = intText.split(/Part\s*-/).slice(1);
+        parts.forEach(p => {
+          const name = extractField(p, 'Name') || extractField(p, 'Display Name');
+          const salesCode = extractField(p, 'Sales Code');
+          const id = extractField(p, 'Id');
+          const color = extractField(p, 'Color');
+          if (name) {
+            parsedInterior.push({
+              name: name,
+              id: salesCode || id || '',
+              hexcode: color || '#1b1b1d',
+              costlabel: '',
+              shortName: toShortName(name),
+              imageURL: ''
+            });
+          }
+        });
+      } else {
+        // Parse Interior for new format
+        if (Object.keys(parsedByTrim).length > 0) {
+          // If the new format was detected in exterior, parse the interior section the same way
+          function parseTrimsFromSection(sectionText, isInterior) {
+            const chunks = sectionText.split(/^Trim\s*\n/m);
+            for (let i = 1; i < chunks.length; i++) {
+              const chunk = chunks[i];
+              const newlineIdx = chunk.indexOf('\n');
+              const trimName = chunk.substring(0, newlineIdx).trim();
+              if (!trimName) continue;
+              
+              const trimKey = trimName.toLowerCase();
+              if (!parsedByTrim[trimKey]) {
+                parsedByTrim[trimKey] = { exterior: [], interior: [] };
+              }
+              
+              const colorsList = isInterior ? parsedByTrim[trimKey].interior : parsedByTrim[trimKey].exterior;
+              const usedShortNames = new Set();
+              
+              const localHexRegex = /(#[A-Fa-f0-9]{6})\s*-\s*([^\n\(]+?)(?:\s*\((.*?)\))?\s*$/gm;
+              let localHexMatch;
+              while ((localHexMatch = localHexRegex.exec(chunk)) !== null) {
+                const hex = localHexMatch[1].trim();
+                const name = localHexMatch[2].trim();
+                const isExtraCost = localHexMatch[3] && localHexMatch[3].toLowerCase().includes('extra-cost');
+                colorsList.push({
+                  name: name,
+                  id: '', 
+                  hexcode: hex,
+                  costlabel: isExtraCost ? '(extra-cost colour)' : '',
+                  shortName: isInterior ? toShortName(name) : generateExteriorShortName(name, usedShortNames),
+                  imageURL: ''
+                });
+              }
+            }
+          }
+          parseTrimsFromSection(interiorText, true);
+        }
+      }
+
+      // Parse Wheel Type
+      const wheelMatch = text.split(/Part Class\s*-\s*Wheel Type/i);
+      if (wheelMatch.length > 1) {
+        const wheelText = wheelMatch[1].split(/Part Class\s*-/i)[0];
+        const parts = wheelText.split(/Part\s*-/).slice(1);
+        parts.forEach(p => {
+          const name = extractField(p, 'Name') || extractField(p, 'Display Name');
+          const salesCode = extractField(p, 'Sales Code');
+          const id = extractField(p, 'Id');
+          if (name) {
+            const shortNameSlug = (salesCode || id || '').toLowerCase();
+            parsedWheels.push({
+              name: name,
+              id: salesCode || id || '',
+              shortName: shortNameSlug
+            });
+          }
+        });
+      }
+
+      // Parse Trims (Auto-create Models)
+      const trimRegex = /^Trim\s*\n(.+)/gm;
+      let trimMatch;
+      let newlyCreatedModels = [];
+      
+      while ((trimMatch = trimRegex.exec(text)) !== null) {
+        const trimName = trimMatch[1].trim();
+        if (trimName) {
+          // Check if model already exists
+          let existingModel = modelsState.find(m => m.model.toLowerCase() === trimName.toLowerCase());
+          if (!existingModel) {
+            const slug = toShortName(trimName);
+            // Notice: The user's JSON uses just "active", "st", "platinum" without "explorer-" prefix
+            // So we'll try to extract the last word as the ID if possible, or use slug.
+            let modelId = slug;
+            if (trimName.includes("®")) {
+              modelId = toShortName(trimName.split("®").pop());
+            } else if (slug.includes("-")) {
+              modelId = slug.split("-").pop();
+            }
+
+            const defaultBrand = 'ford';
+            const newModel = {
+              model: trimName,
+              modelId: modelId,
+              exteriorColors: [],
+              wheelTypes: [],
+              interiorColors: [],
+              exterior_angles: 36,
+              exterior_start_angle: 1,
+              exterior360imageurl: `/content/dam/na/${defaultBrand}/en_us/images/${slug.split('-')[0]}/2027/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.jpeg`,
+              "exterior-slider-view": "false",
+              interior_angles: 36,
+              interior_start_angle: 1,
+              "interior-dome-view": "false",
+              interior360imageurl: `/content/dam/na/${defaultBrand}/en_us/images/${slug.split('-')[0]}/2027/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.jpeg`,
+              configuratorurl: `&trim=${modelId}`
+            };
+            modelsState.push(newModel);
+            newlyCreatedModels.push(newModel);
+          }
+        }
+      }
+
+      if (newlyCreatedModels.length > 0) {
+        // Automatically delete the placeholder "New Vehicle Model" if it was just sitting there empty
+        const defaultIdx = modelsState.findIndex(m => m.model === "New Vehicle Model" && m.exteriorColors.length === 0 && m.interiorColors.length === 0 && m.wheelTypes.length === 0);
+        if (defaultIdx !== -1) {
+          modelsState.splice(defaultIdx, 1);
+        }
+      }
+
+      // If we didn't have an active one (or we just deleted it), set the first new one as active
+      if (activeModelIndex < 0 || activeModelIndex >= modelsState.length) {
+        activeModelIndex = 0;
+      }
+
+      // Auto-append only if they don't already exist to prevent duplicates
+      function mergeItems(targetArray, newItems, modelName) {
+        newItems.forEach(newItem => {
+          // Clone the item to avoid reference issues if applying to multiple models
+          const clonedItem = JSON.parse(JSON.stringify(newItem));
+          const existingItem = targetArray.find(item => 
+            item.name.toLowerCase() === clonedItem.name.toLowerCase() || 
+            (item.id && clonedItem.id && item.id === clonedItem.id)
+          );
+          
+          if (!existingItem) {
+            targetArray.push(clonedItem);
+          } else {
+            // Mismatch check for hexcode (prioritizing the router's hexcode as requested)
+            if (clonedItem.hexcode && existingItem.hexcode && clonedItem.hexcode.toLowerCase() !== existingItem.hexcode.toLowerCase()) {
+              console.warn(`⚠️ [VML 360 Tool - ${modelName}] HEX color mismatch for "${clonedItem.name}". Existing JSON had ${existingItem.hexcode}, but Router says ${clonedItem.hexcode}. The Router value has been prioritized.`);
+              existingItem.hexcode = clonedItem.hexcode;
+            }
+          }
+        });
+      }
+
+      modelsState.forEach((model, idx) => {
+        if (!model.exteriorColors) model.exteriorColors = [];
+        if (!model.interiorColors) model.interiorColors = [];
+        if (!model.wheelTypes) model.wheelTypes = [];
+
+        // Apply global generic colors (if parsed from old format without trims) ONLY to the active model
+        if (idx === activeModelIndex) {
+          if (parsedExterior.length > 0) mergeItems(model.exteriorColors, parsedExterior, model.model);
+          if (parsedInterior.length > 0) mergeItems(model.interiorColors, parsedInterior, model.model);
+          if (parsedWheels.length > 0) mergeItems(model.wheelTypes, parsedWheels, model.model);
+        }
+        
+        // Apply trim-specific colors (if parsed from new format) to all matching models
+        const trimSpecificData = parsedByTrim[model.model.toLowerCase()];
+        if (trimSpecificData) {
+          if (trimSpecificData.exterior.length > 0) mergeItems(model.exteriorColors, trimSpecificData.exterior, model.model);
+          if (trimSpecificData.interior.length > 0) mergeItems(model.interiorColors, trimSpecificData.interior, model.model);
+        }
+      });
+
+      mSmartPaste.value = '';
+      showStatus('Router data parsed successfully!', 'success');
+      refreshUI();
+    });
+  }
 
   // ── INITIAL STATE LOADER ──────────────────────────────────────────────
   function initDefaultState() {
@@ -820,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
           warningsCount++;
         } else {
           // Check for unique sales codes
-          const ids = m.exteriorColors.map(c => c.id);
+          const ids = m.exteriorColors.map(c => c.id).filter(id => id.trim() !== "");
           const duplicates = ids.filter((item, index) => ids.indexOf(item) !== index);
           if (duplicates.length > 0) {
             addValidationItem(`[${modelLabel}] Duplicate VDM Codes in Exterior: ${duplicates.join(', ')}`, "warning");
