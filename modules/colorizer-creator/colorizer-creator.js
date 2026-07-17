@@ -511,7 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // So we'll try to extract the last word as the ID if possible, or use slug.
             let modelId = slug;
             if (trimName.includes("®")) {
-              modelId = toShortName(trimName.split("®").pop());
+              const parts = trimName.split("®").filter(p => p.trim() !== "");
+              modelId = toShortName(parts[parts.length - 1]);
             } else if (slug.includes("-")) {
               modelId = slug.split("-").pop();
             }
