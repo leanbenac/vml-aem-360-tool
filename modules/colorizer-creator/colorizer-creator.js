@@ -554,22 +554,41 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Auto-append only if they don't already exist to prevent duplicates
-      function mergeItems(targetArray, newItems, modelName) {
+      function mergeItems(targetArray, newItems, modelName, allowAdd = true) {
         newItems.forEach(newItem => {
-          // Clone the item to avoid reference issues if applying to multiple models
           const clonedItem = JSON.parse(JSON.stringify(newItem));
-          const existingItem = targetArray.find(item => 
-            item.name.toLowerCase() === clonedItem.name.toLowerCase() || 
-            (item.id && clonedItem.id && item.id === clonedItem.id)
-          );
+          
+          // Match by exact name, ID, or if one name is a substring of the other (e.g. "Onyx Black" vs "Onyx")
+          const existingItem = targetArray.find(item => {
+             const n1 = item.name.toLowerCase();
+             const n2 = clonedItem.name.toLowerCase();
+             return n1 === n2 || 
+                    (item.id && clonedItem.id && item.id === clonedItem.id) ||
+                    (n1.length > 3 && n2.length > 3 && (n1.includes(n2) || n2.includes(n1)));
+          });
           
           if (!existingItem) {
-            targetArray.push(clonedItem);
+            if (allowAdd) {
+              targetArray.push(clonedItem);
+            }
           } else {
-            // Mismatch check for hexcode (prioritizing the router's hexcode as requested)
+            // Update ID if missing
+            if (!existingItem.id && clonedItem.id) {
+              existingItem.id = clonedItem.id;
+              // Update name to the cleaner Sales Code name
+              existingItem.name = clonedItem.name;
+            }
+
+            // Mismatch check for hexcode
             if (clonedItem.hexcode && existingItem.hexcode && clonedItem.hexcode.toLowerCase() !== existingItem.hexcode.toLowerCase()) {
-              console.warn(`⚠️ [VML 360 Tool - ${modelName}] HEX color mismatch for "${clonedItem.name}". Existing JSON had ${existingItem.hexcode}, but Router says ${clonedItem.hexcode}. The Router value has been prioritized.`);
-              existingItem.hexcode = clonedItem.hexcode;
+              if (!clonedItem.id) {
+                // clonedItem is from Router (no ID). Router prevails, overwrite.
+                console.warn(`⚠️ [VML 360 Tool - ${modelName}] HEX mismatch for "${clonedItem.name}". Existing: ${existingItem.hexcode}, Router: ${clonedItem.hexcode}. Overwriting with Router hex.`);
+                existingItem.hexcode = clonedItem.hexcode;
+              } else {
+                // clonedItem is from Sales Code (has ID). Router prevails, DO NOT overwrite.
+                console.warn(`⚠️ [VML 360 Tool - ${modelName}] HEX mismatch for "${clonedItem.name}". Router: ${existingItem.hexcode}, Sales Code: ${clonedItem.hexcode}. Keeping Router hex.`);
+              }
             }
           }
         });
@@ -580,18 +599,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!model.interiorColors) model.interiorColors = [];
         if (!model.wheelTypes) model.wheelTypes = [];
 
-        // Apply global generic colors (if parsed from old format without trims) ONLY to the active model
-        if (idx === activeModelIndex) {
-          if (parsedExterior.length > 0) mergeItems(model.exteriorColors, parsedExterior, model.model);
-          if (parsedInterior.length > 0) mergeItems(model.interiorColors, parsedInterior, model.model);
-          if (parsedWheels.length > 0) mergeItems(model.wheelTypes, parsedWheels, model.model);
-        }
+        // Apply global generic colors. If the model already has colors (from router), we ONLY update. We don't add new ones.
+        const allowAddExt = model.exteriorColors.length === 0;
+        const allowAddInt = model.interiorColors.length === 0;
+        
+        if (parsedExterior.length > 0) mergeItems(model.exteriorColors, parsedExterior, model.model, allowAddExt);
+        if (parsedInterior.length > 0) mergeItems(model.interiorColors, parsedInterior, model.model, allowAddInt);
+        
+        // Wheels are always added to all models
+        if (parsedWheels.length > 0) mergeItems(model.wheelTypes, parsedWheels, model.model, true);
         
         // Apply trim-specific colors (if parsed from new format) to all matching models
         const trimSpecificData = parsedByTrim[model.model.toLowerCase()];
         if (trimSpecificData) {
-          if (trimSpecificData.exterior.length > 0) mergeItems(model.exteriorColors, trimSpecificData.exterior, model.model);
-          if (trimSpecificData.interior.length > 0) mergeItems(model.interiorColors, trimSpecificData.interior, model.model);
+          if (trimSpecificData.exterior.length > 0) mergeItems(model.exteriorColors, trimSpecificData.exterior, model.model, true);
+          if (trimSpecificData.interior.length > 0) mergeItems(model.interiorColors, trimSpecificData.interior, model.model, true);
         }
       });
 
