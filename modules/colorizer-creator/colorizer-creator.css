@@ -97,8 +97,15 @@ body {
 }
 
 @keyframes logoGlow {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.3)); }
-  50% { filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.5)); }
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.3));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.5));
+  }
 }
 
 .header-titles {
@@ -119,9 +126,17 @@ body {
 }
 
 @keyframes flowGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .app-subtitle {
@@ -158,7 +173,7 @@ body {
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -245,8 +260,15 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Card Styles --- */
@@ -308,7 +330,8 @@ body {
   transition: all 0.3s ease;
 }
 
-.dropzone-area:hover, .dropzone-area.dragover {
+.dropzone-area:hover,
+.dropzone-area.dragover {
   border-color: var(--accent-cyan);
   background-color: rgba(0, 229, 255, 0.05);
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
@@ -385,6 +408,7 @@ body {
   .grid-form {
     grid-template-columns: 1fr;
   }
+
   .grid-form .col-span-2 {
     grid-column: span 1;
   }
@@ -483,6 +507,7 @@ textarea:focus {
 
 .color-picker-input-group input[type="color"] {
   -webkit-appearance: none;
+  appearance: none;
   border: 1px solid var(--border);
   background: transparent;
   width: 42px;
@@ -519,7 +544,8 @@ textarea:focus {
   position: absolute;
   opacity: 0;
   cursor: pointer;
-  height: 0; width: 0;
+  height: 0;
+  width: 0;
 }
 
 .checkbox-checkmark {
@@ -535,11 +561,11 @@ textarea:focus {
   transition: all 0.2s ease;
 }
 
-.checkbox-container:hover input ~ .checkbox-checkmark {
+.checkbox-container:hover input~.checkbox-checkmark {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-.checkbox-container input:checked ~ .checkbox-checkmark {
+.checkbox-container input:checked~.checkbox-checkmark {
   background-color: var(--accent-purple);
   border-color: var(--accent-purple);
 }
@@ -557,7 +583,7 @@ textarea:focus {
   transform: rotate(45deg);
 }
 
-.checkbox-container input:checked ~ .checkbox-checkmark::after {
+.checkbox-container input:checked~.checkbox-checkmark::after {
   display: block;
 }
 
@@ -645,7 +671,8 @@ textarea:focus {
   font-size: 11.5px;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
 }
@@ -656,7 +683,7 @@ textarea:focus {
   text-transform: uppercase;
   font-size: 9.5px;
   letter-spacing: 0.8px;
-  background-color: rgba(0,0,0,0.15);
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 .data-table tbody tr {
@@ -847,7 +874,8 @@ code {
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.5;
-  color: #a7f3d0; /* Soft green tech look */
+  color: #a7f3d0;
+  /* Soft green tech look */
   display: block;
 }
 
@@ -883,6 +911,28 @@ code {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: 110px;
+  overflow-y: auto;
+  padding-right: 4px;
+  transition: all 0.2s ease;
+}
+
+.val-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.val-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.val-list::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
+}
+
+.val-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.7);
 }
 
 .val-list li {
@@ -901,6 +951,7 @@ code {
 .val-list li.val-success {
   color: var(--accent-green);
 }
+
 .val-list li.val-success::before {
   content: "✓";
 }
@@ -908,6 +959,7 @@ code {
 .val-list li.val-warning {
   color: #f59e0b;
 }
+
 .val-list li.val-warning::before {
   content: "⚠";
 }
@@ -915,6 +967,7 @@ code {
 .val-list li.val-info {
   color: var(--text-secondary);
 }
+
 .val-list li.val-info::before {
   content: "✦";
 }
@@ -1163,4 +1216,3 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
 }
-

@@ -1898,51 +1898,50 @@ function exportColorizerBaseJSON(cleanedFiles) {
     
     cleanedFiles.forEach(cf => {
         const parts = cf.path.split('/');
-        if (parts.length < 2) return;
+        const filteredParts = parts.filter(p => p);
         
-        const modelId = parts[0];
+        // Find index of 'exterior' or 'interior'
+        const viewIdx = filteredParts.findIndex(p => p.toLowerCase() === 'exterior' || p.toLowerCase() === 'interior');
+        if (viewIdx === -1 || viewIdx === 0) return; // 'exterior' or 'interior' not found, or it's at the very beginning (no model prefix)
+        
+        // The model ID is the part right before exterior/interior
+        const modelId = filteredParts[viewIdx - 1];
+        
         if (!modelsMap[modelId]) {
+            const modelName = modelId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            
+            // Reconstruct the URL base dynamically based on the path parts before modelId
+            const partsBeforeModel = filteredParts.slice(0, viewIdx - 1).join('/');
+            const urlBase = partsBeforeModel ? `${currentBasePath}/${partsBeforeModel}` : currentBasePath;
+            
             modelsMap[modelId] = {
-                model: modelId.toUpperCase(),
+                model: modelName,
                 modelId: modelId,
                 exteriorColors: [],
                 wheelTypes: [],
                 interiorColors: [],
                 exterior_angles: 36,
                 exterior_start_angle: 1,
-                exterior360imageurl: `${currentBasePath}/${modelId}/exterior/{device}/{wheel}/{exteriorcolor}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.${extOption}`,
+                // Match the new layout: model -> exterior -> device -> color -> wheel
+                exterior360imageurl: `${urlBase}/${modelId}/exterior/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.${extOption}`.replace(/\/\//g, '/'),
                 "exterior-slider-view": "false",
                 interior_angles: 36,
                 interior_start_angle: 1,
                 "interior-dome-view": "false",
-                interior360imageurl: `${currentBasePath}/${modelId}/interior/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.${extOption}`,
+                // Match the new layout: model -> interior -> device -> color -> files
+                interior360imageurl: `${urlBase}/${modelId}/interior/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.${extOption}`.replace(/\/\//g, '/'),
                 configuratorurl: `&trim=${modelId}`
             };
         }
         const modelObj = modelsMap[modelId];
         
-        // Find exterior / interior
-        const extIdx = parts.indexOf('exterior');
-        if (extIdx !== -1 && parts.length > extIdx + 3) {
-            const device = parts[extIdx + 1];
-            const wheel = parts[extIdx + 2];
-            const extColor = parts[extIdx + 3];
-            
-            if (wheel) {
-                const wheelShort = wheel.toLowerCase();
-                const wheelId = wheel.toUpperCase();
-                if (!modelObj.wheelTypes.some(w => w.id === wheelId)) {
-                    modelObj.wheelTypes.push({
-                        name: wheel.toUpperCase(),
-                        id: wheelId,
-                        thumbnail: "",
-                        shortName: wheelShort,
-                        costlabel: ""
-                    });
-                }
-            }
-            
-            if (extColor) {
+        // Find exterior / interior color and wheel structure
+        const viewType = filteredParts[viewIdx].toLowerCase();
+        
+        if (viewType === 'exterior') {
+            // Layout: exterior -> device -> color -> wheel -> files
+            const extColor = filteredParts[viewIdx + 2];
+            if (extColor && (viewIdx + 2 < filteredParts.length - 1)) {
                 const colorShort = extColor.toLowerCase();
                 const defaultName = colorShort.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
                 if (!modelObj.exteriorColors.some(c => c.shortName === colorShort)) {
@@ -1955,15 +1954,27 @@ function exportColorizerBaseJSON(cleanedFiles) {
                         costlabel: ""
                     });
                 }
+                
+                // Now check for wheel folder
+                if (viewIdx + 3 < filteredParts.length - 1) {
+                    const wheel = filteredParts[viewIdx + 3];
+                    const wheelShort = wheel.toLowerCase();
+                    const wheelId = wheel.toUpperCase();
+                    if (!modelObj.wheelTypes.some(w => w.id === wheelId)) {
+                        modelObj.wheelTypes.push({
+                            name: "",
+                            id: wheelId,
+                            thumbnail: "",
+                            shortName: wheelShort,
+                            costlabel: ""
+                        });
+                    }
+                }
             }
-        }
-        
-        const intIdx = parts.indexOf('interior');
-        if (intIdx !== -1 && parts.length > intIdx + 2) {
-            const device = parts[intIdx + 1];
-            const intColor = parts[intIdx + 2];
-            
-            if (intColor) {
+        } else if (viewType === 'interior') {
+            // Layout: interior -> device -> color -> files
+            const intColor = filteredParts[viewIdx + 2];
+            if (intColor && (viewIdx + 2 < filteredParts.length - 1)) {
                 const colorShort = intColor.toLowerCase();
                 const defaultName = colorShort.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
                 if (!modelObj.interiorColors.some(c => c.shortName === colorShort)) {

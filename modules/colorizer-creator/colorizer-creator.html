@@ -127,10 +127,176 @@
             </div>
             <div id="import-status" class="status-msg" style="display: none;"></div>
           </div>
+
+          <!-- Card: Generate JSON from 360 Folder Structure -->
+          <div class="card card-hero" style="margin-top: 20px; border-color: rgba(168, 85, 247, 0.3);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <h3 style="margin: 0; color: #c084fc; display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                Generate JSON from Local Folder Structure
+              </h3>
+              <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">Auto Renamer Included</span>
+            </div>
+            
+            <p>Drag & drop a local 360 images folder structure or browse a directory. The tool will automatically clean and rename paths using Ford/Lincoln rules, extract model trims, colors, and wheels, and generate the full JSON configuration.</p>
+
+            <!-- Dropzone for Folders -->
+            <div id="folder-dropzone" class="dropzone-area" style="border-color: rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.03);">
+              <svg class="dropzone-icon" style="color: #a855f7;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                <line x1="12" y1="11" x2="12" y2="17"/>
+                <polyline points="9 14 12 11 15 14"/>
+              </svg>
+              <span id="folder-dropzone-text" style="color: #e2e8f0; font-weight: 500;">Drag & Drop 360 Folder here, or click to browse</span>
+              <input type="file" id="folder-uploader" webkitdirectory directory multiple style="display: none;">
+            </div>
+
+            <!-- Folder Options & Renamer Controls -->
+            <div class="grid-form" style="margin-top: 16px; gap: 12px; background: rgba(15, 23, 42, 0.4); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <div class="form-group">
+                <label class="field-label">Target Brand:</label>
+                <div class="segmented-control">
+                  <label>
+                    <input type="radio" name="folder-brand" value="ford" checked>
+                    Ford
+                  </label>
+                  <label>
+                    <input type="radio" name="folder-brand" value="lincoln">
+                    Lincoln
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="field-label">Target Locale:</label>
+                <div class="segmented-control">
+                  <label>
+                    <input type="radio" name="folder-locale" value="us" checked>
+                    en_us (US)
+                  </label>
+                  <label>
+                    <input type="radio" name="folder-locale" value="ca">
+                    en_ca (CA)
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="field-label">File Extension:</label>
+                <div class="segmented-control">
+                  <label>
+                    <input type="radio" name="folder-ext" value="jpeg" checked>
+                    .jpeg
+                  </label>
+                  <label>
+                    <input type="radio" name="folder-ext" value="jpg">
+                    .jpg
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group col-span-2">
+                <label for="folder-base-path" class="field-label">AEM Base Path Prefix (Optional):</label>
+                <input type="text" id="folder-base-path" class="premium-input" placeholder="/content/dam/na/ford/en_us/images/vehicle/2027/360" style="font-family: var(--font-mono); font-size: 11px;">
+                <span class="input-tip">Defaults to DAM path based on selected brand & locale if left blank.</span>
+              </div>
+            </div>
+
+            <!-- Scan Summary & Action -->
+            <div id="folder-scan-summary" style="display: none; margin-top: 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #38bdf8;">
+              <span id="folder-scan-stats">Scanned 0 files and 0 folders.</span>
+            </div>
+
+            <div class="actions-row" style="margin-top: 16px; display: flex; gap: 10px;">
+              <button id="btn-open-renamer" class="btn btn-secondary" style="border-color: #38bdf8; color: #38bdf8; font-weight: 600; flex: 1; justify-content: center;" disabled>
+                <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/>
+                </svg>
+                Open Renamer
+              </button>
+              <button id="btn-generate-from-folder" class="btn btn-primary" style="background: linear-gradient(135deg, #7e22ce, #a855f7); border-color: #c084fc; color: #ffffff; font-weight: 600; flex: 1.5; justify-content: center;" disabled>
+                <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                Generate JSON from Folder
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Tab 2: Models & General -->
         <div class="w-tab-pane" id="tabModels">
+          <!-- Global Configuration Settings Card -->
+          <div class="card" id="card-global-settings" style="border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(15, 23, 42, 0.6);">
+            <div class="card-header-flex" style="margin-bottom: 10px;">
+              <h3 style="color: #c084fc; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Global JSON Settings
+              </h3>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.4;">
+              These global parameters apply to all vehicle models and image URL templates in this JSON configuration file.
+            </p>
+            <div class="grid-form">
+              <!-- Global Brand -->
+              <div class="form-group">
+                <label class="field-label">Target Brand:</label>
+                <div class="segmented-control">
+                  <label>
+                    <input type="radio" name="global-brand" id="global-brand-ford" value="ford" checked>
+                    Ford
+                  </label>
+                  <label>
+                    <input type="radio" name="global-brand" id="global-brand-lincoln" value="lincoln">
+                    Lincoln
+                  </label>
+                </div>
+              </div>
+
+              <!-- Global Locale -->
+              <div class="form-group">
+                <label class="field-label">Target Locale (Market):</label>
+                <div class="segmented-control">
+                  <label>
+                    <input type="radio" name="global-locale" id="global-locale-us" value="en_us" checked>
+                    en_us (USA)
+                  </label>
+                  <label>
+                    <input type="radio" name="global-locale" id="global-locale-ca" value="en_ca">
+                    en_ca (Canada)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Global Model Year -->
+              <div class="form-group">
+                <label for="global-year" class="field-label">Model Year:</label>
+                <input type="text" id="global-year" class="premium-input" placeholder="e.g. 2027" value="2027">
+              </div>
+
+              <!-- Global File Extension -->
+              <div class="form-group">
+                <label class="field-label">Image File Extension:</label>
+                <div class="segmented-control">
+                  <label>
+                    <input type="radio" name="global-ext" id="global-ext-jpeg" value="jpeg" checked>
+                    .jpeg
+                  </label>
+                  <label>
+                    <input type="radio" name="global-ext" id="global-ext-jpg" value="jpg">
+                    .jpg
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Models List Card -->
           <div class="card">
             <div class="card-header-flex">
@@ -176,53 +342,6 @@
                 <label for="m-id" class="field-label">Model ID (NASAPI):</label>
                 <input type="text" id="m-id" placeholder="e.g. premiere" required>
                 <span class="input-tip">Lowercase, used in URL parameters and folder matching.</span>
-              </div>
-
-              <!-- Row 1.5: Brand & Locale Selection -->
-              <div class="form-group">
-                <label class="field-label">Brand:</label>
-                <div class="segmented-control">
-                  <label id="lbl-brand-ford">
-                    <input type="radio" name="m-brand" id="m-brand-ford" value="ford">
-                    Ford
-                  </label>
-                  <label id="lbl-brand-lincoln">
-                    <input type="radio" name="m-brand" id="m-brand-lincoln" value="lincoln">
-                    Lincoln
-                  </label>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="field-label">Locale (Market):</label>
-                <div class="segmented-control">
-                  <label id="lbl-locale-us">
-                    <input type="radio" name="m-locale" id="m-locale-us" value="en_us">
-                    en_us (USA)
-                  </label>
-                  <label id="lbl-locale-ca">
-                    <input type="radio" name="m-locale" id="m-locale-ca" value="en_ca">
-                    en_ca (Canada)
-                  </label>
-                </div>
-              </div>
-
-              <!-- Row 1.7: Model Year & File Extension -->
-              <div class="form-group">
-                <label for="m-year" class="field-label">Model Year:</label>
-                <input type="text" id="m-year" placeholder="e.g. 2027" value="2027" required>
-              </div>
-              <div class="form-group">
-                <label class="field-label">File Extension:</label>
-                <div class="segmented-control">
-                  <label id="lbl-ext-jpeg">
-                    <input type="radio" name="m-ext" id="m-ext-jpeg" value="jpeg">
-                    .jpeg
-                  </label>
-                  <label id="lbl-ext-jpg">
-                    <input type="radio" name="m-ext" id="m-ext-jpg" value="jpg">
-                    .jpg
-                  </label>
-                </div>
               </div>
 
               <!-- Row 1.8: Configurator Suffix & Default Extra Cost Label Text -->
@@ -328,8 +447,8 @@
                 <div class="form-group">
                   <label for="ec-hex" class="field-label">Hex Code:</label>
                   <div class="color-picker-input-group">
-                    <input type="color" id="ec-picker" value="#1b1b1d">
-                    <input type="text" id="ec-hex" placeholder="#1b1b1d" required>
+                    <input type="color" id="ec-picker" value="#7e22ce">
+                    <input type="text" id="ec-hex" placeholder="e.g. #ff0000">
                   </div>
                 </div>
                 <div class="form-group">
@@ -469,8 +588,8 @@
                 <div class="form-group">
                   <label for="ic-hex" class="field-label">Hex Code:</label>
                   <div class="color-picker-input-group">
-                    <input type="color" id="ic-picker" value="#1b1b1d">
-                    <input type="text" id="ic-hex" placeholder="#1b1b1d" required>
+                    <input type="color" id="ic-picker" value="#7e22ce">
+                    <input type="text" id="ic-hex" placeholder="e.g. #111111">
                   </div>
                 </div>
                 <div class="form-group">
@@ -554,8 +673,13 @@
 
       <div class="preview-footer">
         <div id="validation-summary" class="validation-box">
-          <span class="val-title">Validation checklist:</span>
-          <ul id="validation-list" class="val-list">
+          <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;" id="val-box-header">
+            <span class="val-title" style="margin-bottom: 0;">Validation checklist:</span>
+            <button type="button" id="btn-toggle-val-details" style="background: transparent; border: none; color: var(--accent-cyan); font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; outline: none;">
+              Toggle Details ▼
+            </button>
+          </div>
+          <ul id="validation-list" class="val-list" style="margin-top: 8px;">
             <!-- Rendered dynamically -->
           </ul>
         </div>
@@ -572,8 +696,51 @@
       </div>
     </section>
 
+  <!-- Renamer Modal Overlay -->
+  <div id="renamer-modal" class="vml-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="vml-modal-content" style="width: 720px; max-width: 95vw; max-height: 90vh; background: #0f172a; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+      
+      <!-- Modal Header -->
+      <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(168, 85, 247, 0.05);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; padding: 6px; color: #c084fc; display: flex;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #f8fafc;">Interactive Renamer — Edit Folder Tree</h3>
+            <p style="margin: 2px 0 0 0; font-size: 11px; color: #94a3b8;">Edit folder names inline. File suffixes and URL templates update automatically.</p>
+          </div>
+        </div>
+        <button id="renamer-modal-close" style="background: transparent; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 4px;">&times;</button>
+      </div>
+
+      <!-- Modal Toolbar -->
+      <div style="padding: 10px 20px; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+        <span id="renamer-tree-summary" style="font-size: 12px; color: #38bdf8; font-family: monospace;">0 folders, 0 files detected</span>
+      </div>
+
+      <!-- Modal Body (Tree List) -->
+      <div id="renamer-tree-body" class="aem-360-custom-scroll" style="flex: 1; overflow-y: auto; padding: 16px 20px; min-height: 250px; max-height: 55vh;">
+        <div id="renamer-tree-view"></div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding: 14px 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+        <button id="renamer-modal-cancel" type="button" class="btn btn-secondary" style="padding: 8px 16px;">Cancel</button>
+        <button id="btn-apply-renamer-json" type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #7e22ce, #a855f7); border-color: #c084fc; color: #ffffff; font-weight: 600; padding: 8px 18px;">
+          ✓ Apply Renames & Generate JSON
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   </main>
 
+  <script src="../asset-injector/content-asset-renamer.js"></script>
   <script src="colorizer-creator.js"></script>
 </body>
 

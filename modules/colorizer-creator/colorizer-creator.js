@@ -39,16 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardModelForm = document.getElementById('card-model-form');
   const currentEditingModelTitle = document.getElementById('current-editing-model-title');
 
+  // Global Configuration Settings Elements
+  const globalBrandFord = document.getElementById('global-brand-ford');
+  const globalBrandLincoln = document.getElementById('global-brand-lincoln');
+  const globalLocaleUs = document.getElementById('global-locale-us');
+  const globalLocaleCa = document.getElementById('global-locale-ca');
+  const globalYear = document.getElementById('global-year');
+  const globalExtJpeg = document.getElementById('global-ext-jpeg');
+  const globalExtJpg = document.getElementById('global-ext-jpg');
+
   // Model Form Fields
   const mName = document.getElementById('m-name');
   const mId = document.getElementById('m-id');
-  const mBrandLincoln = document.getElementById('m-brand-lincoln');
-  const mBrandFord = document.getElementById('m-brand-ford');
-  const mLocaleCa = document.getElementById('m-locale-ca');
-  const mLocaleUs = document.getElementById('m-locale-us');
-  const mYear = document.getElementById('m-year');
-  const mExtJpeg = document.getElementById('m-ext-jpeg');
-  const mExtJpg = document.getElementById('m-ext-jpg');
   const mConfigurator = document.getElementById('m-configurator');
   const mExtracostLabel = document.getElementById('m-extracost-label');
   const mExtAngles = document.getElementById('m-ext-angles');
@@ -360,17 +362,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const parts = paintText.split(/Part\s*-/).slice(1);
         
         parts.forEach(p => {
-          const name = extractField(p, 'Name') || extractField(p, 'Display Name');
+          const name = extractField(p, 'Name');
+          const displayName = extractField(p, 'Display Name');
           const salesCode = extractField(p, 'Sales Code');
           const id = extractField(p, 'Id');
           const color = extractField(p, 'Color');
-          if (name) {
+          if (name || displayName) {
             parsedExterior.push({
-              name: name,
+              name: name || displayName || '',
+              displayName: displayName || name || '',
               id: salesCode || id || '',
-              hexcode: color || '#1b1b1d',
+              hexcode: color || '',
               costlabel: '',
-              shortName: generateExteriorShortName(name, usedExtShortNames)
+              shortName: generateExteriorShortName(name || displayName, usedExtShortNames)
             });
           }
         });
@@ -419,17 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const intText = intMatch[1].split(/Part Class\s*-/i)[0];
         const parts = intText.split(/Part\s*-/).slice(1);
         parts.forEach(p => {
-          const name = extractField(p, 'Name') || extractField(p, 'Display Name');
+          const name = extractField(p, 'Name');
+          const displayName = extractField(p, 'Display Name');
           const salesCode = extractField(p, 'Sales Code');
           const id = extractField(p, 'Id');
           const color = extractField(p, 'Color');
-          if (name) {
+          if (name || displayName) {
             parsedInterior.push({
-              name: name,
+              name: name || displayName || '',
+              displayName: displayName || name || '',
               id: salesCode || id || '',
-              hexcode: color || '#1b1b1d',
+              hexcode: color || '',
               costlabel: '',
-              shortName: toShortName(name),
+              shortName: toShortName(name || displayName),
               imageURL: ''
             });
           }
@@ -562,9 +568,21 @@ document.addEventListener('DOMContentLoaded', () => {
           const existingItem = targetArray.find(item => {
              const n1 = item.name.toLowerCase();
              const n2 = clonedItem.name.toLowerCase();
+             const dn2 = (clonedItem.displayName || '').toLowerCase();
+             
+             const s1 = (item.shortName || '').toLowerCase();
+             const s2 = toShortName(clonedItem.name);
+             const sdn2 = clonedItem.displayName ? toShortName(clonedItem.displayName) : '';
+
              return n1 === n2 || 
+                    (dn2 && n1 === dn2) ||
                     (item.id && clonedItem.id && item.id === clonedItem.id) ||
-                    (n1.length > 3 && n2.length > 3 && (n1.includes(n2) || n2.includes(n1)));
+                    (n1.length > 3 && n2.length > 3 && (n1.includes(n2) || n2.includes(n1))) ||
+                    (dn2 && n1.length > 3 && dn2.length > 3 && (n1.includes(dn2) || dn2.includes(n1))) ||
+                    (s1 && s2 && s1 === s2) ||
+                    (s1 && sdn2 && s1 === sdn2) ||
+                    (s1 && s2 && (s1.includes(s2) || s2.includes(s1))) ||
+                    (s1 && sdn2 && (s1.includes(sdn2) || sdn2.includes(s1)));
           });
           
           if (!existingItem) {
@@ -575,8 +593,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update ID if missing
             if (!existingItem.id && clonedItem.id) {
               existingItem.id = clonedItem.id;
-              // Update name to the cleaner Sales Code name
-              existingItem.name = clonedItem.name;
             }
 
             // Mismatch check for hexcode
@@ -642,6 +658,51 @@ document.addEventListener('DOMContentLoaded', () => {
     validateConfig();
   }
 
+  // Render interactive color swatch UI (or unassigned badge)
+  function renderSwatchCell(color, onUpdateHex) {
+    const container = document.createElement('div');
+    container.style.cssText = 'display: flex; align-items: center; gap: 8px; position: relative; max-width: 220px;';
+
+    const pickerInput = document.createElement('input');
+    pickerInput.type = 'color';
+    pickerInput.value = (color.hexcode && color.hexcode.trim()) ? color.hexcode.trim() : '#7e22ce';
+    pickerInput.style.cssText = 'position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; z-index: 5; pointer-events: auto;';
+    pickerInput.title = 'Click to choose Hex Code';
+
+    pickerInput.addEventListener('change', (e) => {
+      color.hexcode = e.target.value;
+      if (onUpdateHex) onUpdateHex(e.target.value);
+      refreshUI();
+    });
+
+    if (color.hexcode && color.hexcode.trim()) {
+      const swatch = document.createElement('div');
+      swatch.className = 'color-swatch-preview';
+      swatch.style.cssText = `background-color: ${escapeHTML(color.hexcode)}; border: 1.5px solid rgba(255,255,255,0.3); border-radius: 50%; width: 20px; height: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.4); flex-shrink: 0; cursor: pointer;`;
+
+      const hexLabel = document.createElement('span');
+      hexLabel.style.cssText = 'font-family: var(--font-mono, monospace); font-size: 11px; color: #a7f3d0; cursor: pointer; font-weight: 600;';
+      hexLabel.textContent = color.hexcode;
+
+      container.appendChild(pickerInput);
+      container.appendChild(swatch);
+      container.appendChild(hexLabel);
+    } else {
+      const swatch = document.createElement('div');
+      swatch.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; border: 1.5px dashed #f59e0b; background: repeating-linear-gradient(45deg, rgba(245,158,11,0.25), rgba(245,158,11,0.25) 3px, transparent 3px, transparent 6px); flex-shrink: 0; cursor: pointer;';
+
+      const unassignedBadge = document.createElement('span');
+      unassignedBadge.style.cssText = 'font-size: 10px; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px dashed rgba(245, 158, 11, 0.4); padding: 2px 8px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;';
+      unassignedBadge.innerHTML = '⚠️ Hex Missing — Click to Set 🎨';
+
+      container.appendChild(pickerInput);
+      container.appendChild(swatch);
+      container.appendChild(unassignedBadge);
+    }
+
+    return container;
+  }
+
   // Scans modelsState to compile a global unique list of colors and renders quick-add pills
   function renderColorCatalogs() {
     // 1. Exterior Colors Catalog
@@ -665,15 +726,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = 'catalog-pill';
+        const swatchStyle = (color.hexcode && color.hexcode.trim())
+          ? `background-color: ${escapeHTML(color.hexcode)};`
+          : `border: 1px dashed #f59e0b; background: repeating-linear-gradient(45deg, rgba(245,158,11,0.3), rgba(245,158,11,0.3) 2px, transparent 2px, transparent 4px);`;
+
         pill.innerHTML = `
-          <div class="catalog-pill-swatch" style="background-color: ${escapeHTML(color.hexcode || '#000')};"></div>
+          <div class="catalog-pill-swatch" style="${swatchStyle}"></div>
           <span>${escapeHTML(color.name)} (${escapeHTML(color.id)})</span>
         `;
         pill.addEventListener('click', () => {
           ecName.value = color.name;
           ecId.value = color.id;
-          ecHex.value = color.hexcode || '#1b1b1d';
-          ecPicker.value = color.hexcode || '#1b1b1d';
+          ecHex.value = color.hexcode || '';
+          ecPicker.value = color.hexcode || '#7e22ce';
           ecExtraCost.checked = !!color.costlabel;
           ecShort.value = color.shortName || toShortName(color.name);
           isShortNameManuallyEdited = false;
@@ -705,15 +770,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = 'catalog-pill';
+        const swatchStyle = (color.hexcode && color.hexcode.trim())
+          ? `background-color: ${escapeHTML(color.hexcode)};`
+          : `border: 1px dashed #f59e0b; background: repeating-linear-gradient(45deg, rgba(245,158,11,0.3), rgba(245,158,11,0.3) 2px, transparent 2px, transparent 4px);`;
+
         pill.innerHTML = `
-          <div class="catalog-pill-swatch" style="background-color: ${escapeHTML(color.hexcode || '#000')};"></div>
+          <div class="catalog-pill-swatch" style="${swatchStyle}"></div>
           <span>${escapeHTML(color.name)} (${escapeHTML(color.id)})</span>
         `;
         pill.addEventListener('click', () => {
           icName.value = color.name;
           icId.value = color.id;
-          icHex.value = color.hexcode || '#1b1b1d';
-          icPicker.value = color.hexcode || '#1b1b1d';
+          icHex.value = color.hexcode || '';
+          icPicker.value = color.hexcode || '#7e22ce';
           icExtraCost.checked = !!color.costlabel;
           icShort.value = color.shortName || toShortName(color.name);
           icImage.value = color.imageURL || '';
@@ -776,30 +845,6 @@ document.addEventListener('DOMContentLoaded', () => {
     mName.value = currentModel.model || '';
     mId.value = currentModel.modelId || '';
     mConfigurator.value = currentModel.configuratorurl || '';
-    mYear.value = currentModel.year || '2027';
-    
-    // Brand and Locale radios checked state
-    const brand = currentModel.brand || 'ford';
-    const locale = currentModel.locale || 'en_us';
-    const extension = currentModel.extension || 'jpeg';
-    
-    if (brand === 'lincoln') {
-      mBrandLincoln.checked = true;
-    } else {
-      mBrandFord.checked = true;
-    }
-    
-    if (locale === 'en_ca') {
-      mLocaleCa.checked = true;
-    } else {
-      mLocaleUs.checked = true;
-    }
-
-    if (extension === 'jpg') {
-      mExtJpg.checked = true;
-    } else {
-      mExtJpeg.checked = true;
-    }
 
     mExtAngles.value = currentModel.exterior_angles !== undefined ? currentModel.exterior_angles : 36;
     mExtStart.value = currentModel.exterior_start_angle !== undefined ? currentModel.exterior_start_angle : 1;
@@ -846,7 +891,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
       
       const tdSwatch = document.createElement('td');
-      tdSwatch.innerHTML = `<div class="color-swatch-preview" style="background-color: ${escapeHTML(color.hexcode || '#000')};"></div>`;
+      tdSwatch.appendChild(renderSwatchCell(color, (newHex) => {
+        if (editingExtColorIdx === cIdx) {
+          ecHex.value = newHex;
+          ecPicker.value = newHex;
+        }
+      }));
       
       const tdName = document.createElement('td');
       tdName.className = 'cell-color-name';
@@ -877,8 +927,8 @@ document.addEventListener('DOMContentLoaded', () => {
         editingExtColorIdx = cIdx;
         ecName.value = color.name;
         ecId.value = color.id;
-        ecHex.value = color.hexcode || '#1b1b1d';
-        ecPicker.value = color.hexcode || '#1b1b1d';
+        ecHex.value = color.hexcode || '';
+        ecPicker.value = color.hexcode || '#7e22ce';
         ecExtraCost.checked = !!color.costlabel;
         ecShort.value = color.shortName;
         
@@ -1018,7 +1068,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
 
       const tdSwatch = document.createElement('td');
-      tdSwatch.innerHTML = `<div class="color-swatch-preview" style="background-color: ${escapeHTML(color.hexcode || '#000')};"></div>`;
+      tdSwatch.appendChild(renderSwatchCell(color, (newHex) => {
+        if (editingIntColorIdx === cIdx) {
+          icHex.value = newHex;
+          icPicker.value = newHex;
+        }
+      }));
 
       const tdName = document.createElement('td');
       tdName.className = 'cell-color-name';
@@ -1056,8 +1111,8 @@ document.addEventListener('DOMContentLoaded', () => {
         editingIntColorIdx = cIdx;
         icName.value = color.name;
         icId.value = color.id;
-        icHex.value = color.hexcode || '#1b1b1d';
-        icPicker.value = color.hexcode || '#1b1b1d';
+        icHex.value = color.hexcode || '';
+        icPicker.value = color.hexcode || '#7e22ce';
         icExtraCost.checked = !!color.costlabel;
         icShort.value = color.shortName;
         icImage.value = color.imageURL || '';
@@ -1141,11 +1196,55 @@ document.addEventListener('DOMContentLoaded', () => {
           addValidationItem(`[${modelLabel}] Has no exterior colors.`, "warning");
           warningsCount++;
         } else {
+          const extNameMap = {};
+          const extHexMap = {};
+
+          m.exteriorColors.forEach(c => {
+            const colorName = (c.name || c.shortName || '').trim();
+            if (!c.id || !c.id.trim()) {
+              addValidationItem(`[${modelLabel}] Exterior color "${colorName}" is missing VDM ID (Sales Code).`, "warning");
+              warningsCount++;
+            }
+            if (!c.hexcode || !c.hexcode.trim()) {
+              addValidationItem(`[${modelLabel}] Exterior color "${colorName}" is missing Hex Code.`, "warning");
+              warningsCount++;
+            } else {
+              const hex = c.hexcode.trim().toLowerCase();
+              if (!extHexMap[hex]) extHexMap[hex] = [];
+              extHexMap[hex].push(colorName);
+            }
+
+            const lowerName = colorName.toLowerCase();
+            if (lowerName) {
+              if (!extNameMap[lowerName]) extNameMap[lowerName] = 0;
+              extNameMap[lowerName]++;
+            }
+          });
+
+          // Check for duplicate color names
+          Object.entries(extNameMap).forEach(([nameLower, count]) => {
+            if (count > 1) {
+              const originalName = m.exteriorColors.find(c => (c.name || c.shortName || '').trim().toLowerCase() === nameLower)?.name || nameLower;
+              addValidationItem(`[${modelLabel}] Duplicate Exterior Color Name: "${originalName}".`, "warning");
+              warningsCount++;
+            }
+          });
+
+          // Check for duplicate non-empty hex codes on differently named colors
+          Object.entries(extHexMap).forEach(([hex, names]) => {
+            const uniqueNames = [...new Set(names)];
+            if (uniqueNames.length > 1) {
+              addValidationItem(`[${modelLabel}] Exterior colors "${uniqueNames.join('", "')}" share identical Hex Code (${hex}).`, "warning");
+              warningsCount++;
+            }
+          });
+
           // Check for unique sales codes
-          const ids = m.exteriorColors.map(c => c.id).filter(id => id.trim() !== "");
+          const ids = m.exteriorColors.map(c => c.id).filter(id => id && id.trim() !== "");
           const duplicates = ids.filter((item, index) => ids.indexOf(item) !== index);
           if (duplicates.length > 0) {
-            addValidationItem(`[${modelLabel}] Duplicate VDM Codes in Exterior: ${duplicates.join(', ')}`, "warning");
+            const uniqueDupes = [...new Set(duplicates)];
+            addValidationItem(`[${modelLabel}] Duplicate VDM Codes in Exterior: ${uniqueDupes.join(', ')}`, "warning");
             warningsCount++;
           }
         }
@@ -1154,18 +1253,72 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!m.wheelTypes || m.wheelTypes.length === 0) {
           addValidationItem(`[${modelLabel}] Has no wheel types configured.`, "warning");
           warningsCount++;
+        } else {
+          m.wheelTypes.forEach(w => {
+            if (!w.id || !w.id.trim()) {
+              addValidationItem(`[${modelLabel}] Wheel "${w.shortName}" is missing VDM Sales Code (ID).`, "warning");
+              warningsCount++;
+            }
+            if (!w.name || !w.name.trim()) {
+              addValidationItem(`[${modelLabel}] Wheel "${w.shortName || w.id}" is missing Wheel Description (Name).`, "warning");
+              warningsCount++;
+            }
+          });
         }
 
         // Interior Colors validation
         if (!m.interiorColors || m.interiorColors.length === 0) {
           addValidationItem(`[${modelLabel}] Has no interior colors.`, "warning");
           warningsCount++;
+        } else {
+          const intNameMap = {};
+          const intHexMap = {};
+
+          m.interiorColors.forEach(c => {
+            const colorName = (c.name || c.shortName || '').trim();
+            if (!c.id || !c.id.trim()) {
+              addValidationItem(`[${modelLabel}] Interior color "${colorName}" is missing VDM ID (Sales Code).`, "warning");
+              warningsCount++;
+            }
+            if (!c.hexcode || !c.hexcode.trim()) {
+              addValidationItem(`[${modelLabel}] Interior color "${colorName}" is missing Hex Code.`, "warning");
+              warningsCount++;
+            } else {
+              const hex = c.hexcode.trim().toLowerCase();
+              if (!intHexMap[hex]) intHexMap[hex] = [];
+              intHexMap[hex].push(colorName);
+            }
+
+            const lowerName = colorName.toLowerCase();
+            if (lowerName) {
+              if (!intNameMap[lowerName]) intNameMap[lowerName] = 0;
+              intNameMap[lowerName]++;
+            }
+          });
+
+          // Check for duplicate interior color names
+          Object.entries(intNameMap).forEach(([nameLower, count]) => {
+            if (count > 1) {
+              const originalName = m.interiorColors.find(c => (c.name || c.shortName || '').trim().toLowerCase() === nameLower)?.name || nameLower;
+              addValidationItem(`[${modelLabel}] Duplicate Interior Color Name: "${originalName}".`, "warning");
+              warningsCount++;
+            }
+          });
+
+          // Check for duplicate non-empty hex codes on differently named interior colors
+          Object.entries(intHexMap).forEach(([hex, names]) => {
+            const uniqueNames = [...new Set(names)];
+            if (uniqueNames.length > 1) {
+              addValidationItem(`[${modelLabel}] Interior colors "${uniqueNames.join('", "')}" share identical Hex Code (${hex}).`, "warning");
+              warningsCount++;
+            }
+          });
         }
       });
     }
 
     if (warningsCount > 0) {
-      validationBadge.textContent = "Incomplete";
+      validationBadge.textContent = `Incomplete (${warningsCount} Issue${warningsCount > 1 ? 's' : ''})`;
       validationBadge.className = "badge badge-warning";
     } else if (modelsState.length > 0) {
       validationBadge.textContent = "Valid & Complete";
@@ -1175,6 +1328,22 @@ document.addEventListener('DOMContentLoaded', () => {
       validationBadge.textContent = "Empty Workspace";
       validationBadge.className = "badge badge-warning";
     }
+  }
+
+  const valBoxHeader = document.getElementById('val-box-header');
+  const btnToggleValDetails = document.getElementById('btn-toggle-val-details');
+  let isValDetailsOpen = true;
+
+  if (valBoxHeader) {
+    valBoxHeader.addEventListener('click', () => {
+      isValDetailsOpen = !isValDetailsOpen;
+      if (validationList) {
+        validationList.style.display = isValDetailsOpen ? 'flex' : 'none';
+      }
+      if (btnToggleValDetails) {
+        btnToggleValDetails.textContent = isValDetailsOpen ? 'Toggle Details ▼' : 'Toggle Details ▲';
+      }
+    });
   }
 
   function addValidationItem(text, type) {
@@ -1200,71 +1369,125 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Auto update URL templates based on brand, locale, year, extension and name
+  function getGlobalSettings() {
+    const brand = document.querySelector('input[name="global-brand"]:checked')?.value || 'ford';
+    const locale = document.querySelector('input[name="global-locale"]:checked')?.value || 'en_us';
+    const year = (globalYear ? globalYear.value.trim() : '') || '2027';
+    const ext = document.querySelector('input[name="global-ext"]:checked')?.value || 'jpeg';
+    return { brand, locale, year, ext };
+  }
+
+  function applyGlobalSettingsToAllModels() {
+    const { brand, locale, year, ext } = getGlobalSettings();
+
+    modelsState.forEach(m => {
+      m.brand = brand;
+      m.locale = locale;
+      m.year = year;
+      m.extension = ext;
+
+      if (m.exterior360imageurl) {
+        let url = m.exterior360imageurl;
+        url = url.replace(/\/na\/[^\/]+\//g, `/na/${brand}/`);
+        url = url.replace(/\/([^\/]+)\/images\//g, `/${locale}/images/`);
+        url = url.replace(/\/([^\/]+)\/360\//g, `/${year}/360/`);
+        url = url.replace(/\.[a-z0-9]+$/i, `.${ext}`);
+        m.exterior360imageurl = url;
+      }
+
+      if (m.interior360imageurl) {
+        let url = m.interior360imageurl;
+        url = url.replace(/\/na\/[^\/]+\//g, `/na/${brand}/`);
+        url = url.replace(/\/([^\/]+)\/images\//g, `/${locale}/images/`);
+        url = url.replace(/\/([^\/]+)\/360\//g, `/${year}/360/`);
+        url = url.replace(/\.[a-z0-9]+$/i, `.${ext}`);
+        m.interior360imageurl = url;
+      }
+    });
+
+    // Also sync folder import card controls in Tab 1 for smooth UX
+    const folderBrandRadio = document.querySelector(`input[name="folder-brand"][value="${brand}"]`);
+    if (folderBrandRadio) folderBrandRadio.checked = true;
+
+    const folderLocaleRadio = document.querySelector(`input[name="folder-locale"][value="${locale === 'en_ca' ? 'ca' : 'us'}"]`);
+    if (folderLocaleRadio) folderLocaleRadio.checked = true;
+
+    const folderExtRadio = document.querySelector(`input[name="folder-ext"][value="${ext}"]`);
+    if (folderExtRadio) folderExtRadio.checked = true;
+
+    refreshUI();
+  }
+
+  document.querySelectorAll('input[name="global-brand"]').forEach(radio => {
+    radio.addEventListener('change', applyGlobalSettingsToAllModels);
+  });
+
+  document.querySelectorAll('input[name="global-locale"]').forEach(radio => {
+    radio.addEventListener('change', applyGlobalSettingsToAllModels);
+  });
+
+  document.querySelectorAll('input[name="global-ext"]').forEach(radio => {
+    radio.addEventListener('change', applyGlobalSettingsToAllModels);
+  });
+
+  if (globalYear) {
+    globalYear.addEventListener('input', applyGlobalSettingsToAllModels);
+  }
+
+  // Auto update URL templates based on global settings and model name
   function autoUpdateUrls() {
     if (activeModelIndex < 0 || activeModelIndex >= modelsState.length) return;
     const currentModel = modelsState[activeModelIndex];
     const vehicle = getVehicleFolder(currentModel.model);
-    const brand = currentModel.brand || 'ford';
-    const locale = currentModel.locale || 'en_us';
-    const year = currentModel.year || '2027';
-    const ext = currentModel.extension || 'jpeg';
+    const { brand, locale, year, ext } = getGlobalSettings();
     
     const extUrlTemplate = `/content/dam/na/${brand}/${locale}/images/${vehicle}/${year}/360/{modelId}/{view}/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.${ext}`;
     const intUrlTemplate = `/content/dam/na/${brand}/${locale}/images/${vehicle}/${year}/360/{modelId}/{view}/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.${ext}`;
     
     currentModel.exterior360imageurl = extUrlTemplate;
     currentModel.interior360imageurl = intUrlTemplate;
+    currentModel.brand = brand;
+    currentModel.locale = locale;
+    currentModel.year = year;
+    currentModel.extension = ext;
     
     mExtUrl.value = extUrlTemplate;
     mIntUrl.value = intUrlTemplate;
   }
 
   mName.addEventListener('input', () => {
-    updateActiveModelProperty('model', mName.value.trim());
-    autoUpdateUrls();
+    const newName = mName.value.trim();
+    updateActiveModelProperty('model', newName);
+    if (currentEditingModelTitle) {
+      currentEditingModelTitle.textContent = `Edit Model: ${newName || 'Untitled'}`;
+    }
+    renderModelsList();
     renderJSONOutput();
+    validateConfig();
   });
-  mId.addEventListener('input', () => updateActiveModelProperty('modelId', mId.value.trim()));
 
-  mYear.addEventListener('input', () => {
-    updateActiveModelProperty('year', mYear.value.trim());
-    autoUpdateUrls();
+  mId.addEventListener('input', () => {
+    const newId = mId.value.trim();
+    updateActiveModelProperty('modelId', newId);
+    
+    if (activeModelIndex >= 0 && activeModelIndex < modelsState.length) {
+      const currentModel = modelsState[activeModelIndex];
+      if (currentModel.exterior360imageurl) {
+        currentModel.exterior360imageurl = currentModel.exterior360imageurl.replace(/\/360\/([^\/]+)\/(exterior|interior)\//g, `/360/${newId}/$2/`);
+        mExtUrl.value = currentModel.exterior360imageurl;
+      }
+      if (currentModel.interior360imageurl) {
+        currentModel.interior360imageurl = currentModel.interior360imageurl.replace(/\/360\/([^\/]+)\/(exterior|interior)\//g, `/360/${newId}/$2/`);
+        mIntUrl.value = currentModel.interior360imageurl;
+      }
+      if (!currentModel.configuratorurl || currentModel.configuratorurl.startsWith('&trim=')) {
+        currentModel.configuratorurl = `&trim=${newId}`;
+        mConfigurator.value = currentModel.configuratorurl;
+      }
+    }
+    
     renderJSONOutput();
-  });
-  
-  // Brand & Locale & Extension Radio events
-  document.querySelectorAll('input[name="m-brand"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (activeModelIndex >= 0 && activeModelIndex < modelsState.length) {
-        modelsState[activeModelIndex].brand = radio.value;
-        autoUpdateUrls();
-        renderJSONOutput();
-        validateConfig();
-      }
-    });
-  });
-
-  document.querySelectorAll('input[name="m-locale"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (activeModelIndex >= 0 && activeModelIndex < modelsState.length) {
-        modelsState[activeModelIndex].locale = radio.value;
-        autoUpdateUrls();
-        renderJSONOutput();
-        validateConfig();
-      }
-    });
-  });
-
-  document.querySelectorAll('input[name="m-ext"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (activeModelIndex >= 0 && activeModelIndex < modelsState.length) {
-        modelsState[activeModelIndex].extension = radio.value;
-        autoUpdateUrls();
-        renderJSONOutput();
-        validateConfig();
-      }
-    });
+    validateConfig();
   });
 
   mConfigurator.addEventListener('input', () => updateActiveModelProperty('configuratorurl', mConfigurator.value.trim()));
@@ -1398,8 +1621,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Reset fields
     addExtColorForm.reset();
-    ecPicker.value = "#1b1b1d";
-    ecHex.value = "#1b1b1d";
+    ecPicker.value = "#7e22ce";
+    ecHex.value = "";
     isShortNameManuallyEdited = false;
 
     refreshUI();
@@ -1493,13 +1716,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset Form
     addIntColorForm.reset();
-    icPicker.value = "#1b1b1d";
-    icHex.value = "#1b1b1d";
+    icPicker.value = "#7e22ce";
+    icHex.value = "";
     refreshUI();
   });
 
   // ── IMPORT JSON PARSER & ACTION ───────────────────────────────────────
   
+  function syncGlobalSettingsUI(brand, locale, year, extension) {
+    if (brand === 'lincoln') {
+      if (globalBrandLincoln) globalBrandLincoln.checked = true;
+    } else {
+      if (globalBrandFord) globalBrandFord.checked = true;
+    }
+
+    if (locale === 'en_ca') {
+      if (globalLocaleCa) globalLocaleCa.checked = true;
+    } else {
+      if (globalLocaleUs) globalLocaleUs.checked = true;
+    }
+
+    if (globalYear) {
+      globalYear.value = year || '2027';
+    }
+
+    if (extension === 'jpg') {
+      if (globalExtJpg) globalExtJpg.checked = true;
+    } else {
+      if (globalExtJpeg) globalExtJpeg.checked = true;
+    }
+
+    const folderBrandRadio = document.querySelector(`input[name="folder-brand"][value="${brand}"]`);
+    if (folderBrandRadio) folderBrandRadio.checked = true;
+
+    const folderLocaleRadio = document.querySelector(`input[name="folder-locale"][value="${locale === 'en_ca' ? 'ca' : 'us'}"]`);
+    if (folderLocaleRadio) folderLocaleRadio.checked = true;
+
+    const folderExtRadio = document.querySelector(`input[name="folder-ext"][value="${extension}"]`);
+    if (folderExtRadio) folderExtRadio.checked = true;
+  }
+
   // Parses loaded JSON array and formats/loads it to state
   function loadJSON(jsonString) {
     try {
@@ -1529,14 +1785,14 @@ document.addEventListener('DOMContentLoaded', () => {
             id: c.id || '',
             thumbnail: c.thumbnail || '',
             shortName: c.shortName || toShortName(c.name),
-            hexcode: c.hexcode || '#1b1b1d',
+            hexcode: c.hexcode !== undefined ? c.hexcode : '',
             costlabel: c.costlabel || ''
           })) : [],
           wheelTypes: Array.isArray(m.wheelTypes) ? m.wheelTypes.map(w => ({
             name: w.name || '',
             id: w.id || '',
             thumbnail: w.thumbnail || '',
-            shortName: w.shortName || w.id.toLowerCase(),
+            shortName: w.shortName || toShortName(w.name || w.id),
             costlabel: w.costlabel || ''
           })) : [],
           interiorColors: Array.isArray(m.interiorColors) ? m.interiorColors.map(i => ({
@@ -1544,7 +1800,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: i.id || '',
             thumbnail: i.thumbnail || '',
             shortName: i.shortName || toShortName(i.name),
-            hexcode: i.hexcode || '#1b1b1d',
+            hexcode: i.hexcode !== undefined ? i.hexcode : '',
             costlabel: i.costlabel || '',
             imageURL: i.imageURL || ''
           })) : [],
@@ -1639,6 +1895,619 @@ document.addEventListener('DOMContentLoaded', () => {
       showStatus("Failed to read file.", "error");
     };
     reader.readAsText(file);
+  }
+
+  // ── GENERATE JSON FROM LOCAL FOLDER STRUCTURE ──────────────────────────
+  const folderDropzone = document.getElementById('folder-dropzone');
+  const folderUploader = document.getElementById('folder-uploader');
+  const folderDropzoneText = document.getElementById('folder-dropzone-text');
+  const folderScanSummary = document.getElementById('folder-scan-summary');
+  const folderScanStats = document.getElementById('folder-scan-stats');
+  const btnGenerateFromFolder = document.getElementById('btn-generate-from-folder');
+  const folderBasePathInput = document.getElementById('folder-base-path');
+
+  let currentScannedFolderFiles = [];
+  let currentScannedFoldersSet = new Set();
+
+  if (folderDropzone && folderUploader) {
+    folderDropzone.addEventListener('click', () => {
+      folderUploader.click();
+    });
+
+    folderUploader.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      
+      const fileList = [];
+      const folderSet = new Set();
+      
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const path = f.webkitRelativePath || f.name;
+        if (f.name === '.DS_Store' || f.name.toLowerCase() === 'thumbs.db' || f.name.startsWith('._')) continue;
+        
+        fileList.push({ file: f, path: path });
+        let parts = path.split('/');
+        parts.pop();
+        let cur = '';
+        parts.forEach(p => {
+          cur = cur ? cur + '/' + p : p;
+          folderSet.add(cur);
+        });
+      }
+      
+      handleScannedFolderFiles(folderSet, fileList);
+    });
+
+    folderDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      folderDropzone.classList.add('dragover');
+    });
+
+    folderDropzone.addEventListener('dragleave', () => {
+      folderDropzone.classList.remove('dragover');
+    });
+
+    folderDropzone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      folderDropzone.classList.remove('dragover');
+      
+      const items = e.dataTransfer.items;
+      if (!items || items.length === 0) return;
+      
+      const fileList = [];
+      const folderSet = new Set();
+      
+      async function traverseEntry(item, path = '') {
+        if (item.isFile) {
+          return new Promise((resolve) => {
+            item.file((file) => {
+              if (file.name !== '.DS_Store' && file.name.toLowerCase() !== 'thumbs.db' && !file.name.startsWith('._')) {
+                fileList.push({ file: file, path: path + file.name });
+              }
+              resolve();
+            });
+          });
+        } else if (item.isDirectory) {
+          folderSet.add(path + item.name);
+          const dirReader = item.createReader();
+          let allEntries = [];
+          
+          const readAll = () => {
+            return new Promise((resolve) => {
+              dirReader.readEntries((entries) => {
+                if (entries.length === 0) resolve(allEntries);
+                else {
+                  allEntries = allEntries.concat(entries);
+                  readAll().then(resolve);
+                }
+              });
+            });
+          };
+          
+          const entries = await readAll();
+          for (const entry of entries) {
+            await traverseEntry(entry, path + item.name + '/');
+          }
+        }
+      }
+
+      const entries = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+        if (entry) entries.push(entry);
+      }
+
+      if (entries.length > 0) {
+        for (const entry of entries) {
+          await traverseEntry(entry);
+        }
+      } else {
+        // Fallback for regular files dropped
+        const files = e.dataTransfer.files;
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          const path = f.webkitRelativePath || f.name;
+          if (f.name !== '.DS_Store' && f.name.toLowerCase() !== 'thumbs.db' && !f.name.startsWith('._')) {
+            fileList.push({ file: f, path: path });
+          }
+        }
+      }
+
+      handleScannedFolderFiles(folderSet, fileList);
+    });
+  }
+
+  const btnOpenRenamer = document.getElementById('btn-open-renamer');
+  const renamerModal = document.getElementById('renamer-modal');
+  const renamerModalClose = document.getElementById('renamer-modal-close');
+  const renamerModalCancel = document.getElementById('renamer-modal-cancel');
+  const btnApplyRenamerJson = document.getElementById('btn-apply-renamer-json');
+  const btnRenamerInvertAll = document.getElementById('btn-renamer-invert-all');
+  const renamerTreeSummary = document.getElementById('renamer-tree-summary');
+  const renamerTreeView = document.getElementById('renamer-tree-view');
+
+  let renamerCurrentTree = null;
+  let renamerFolderInversionStates = {};
+  let renamerAllInverted = false;
+
+  function handleScannedFolderFiles(foldersSet, fileList) {
+    currentScannedFoldersSet = foldersSet;
+    currentScannedFolderFiles = fileList;
+
+    if (fileList.length === 0) {
+      if (folderScanSummary) folderScanSummary.style.display = 'none';
+      if (btnGenerateFromFolder) btnGenerateFromFolder.disabled = true;
+      if (btnOpenRenamer) btnOpenRenamer.disabled = true;
+      if (folderDropzoneText) folderDropzoneText.textContent = 'Drag & Drop 360 Folder here, or click to browse';
+      return;
+    }
+
+    if (folderScanSummary) folderScanSummary.style.display = 'block';
+    if (folderScanStats) {
+      folderScanStats.textContent = `Scanned ${fileList.length} file(s) across ${foldersSet.size} folder(s). Ready to generate JSON!`;
+    }
+    if (folderDropzoneText) {
+      folderDropzoneText.textContent = `✓ Folder loaded (${fileList.length} file(s) detected)`;
+    }
+    if (btnGenerateFromFolder) {
+      btnGenerateFromFolder.disabled = false;
+    }
+    if (btnOpenRenamer) {
+      btnOpenRenamer.disabled = false;
+    }
+  }
+
+  if (btnOpenRenamer) {
+    btnOpenRenamer.addEventListener('click', () => {
+      if (currentScannedFolderFiles.length === 0) {
+        alert("Please drop or browse a folder first.");
+        return;
+      }
+      if (renamerModal) renamerModal.style.display = 'flex';
+      buildAndRenderRenamerTree();
+    });
+  }
+
+  function closeRenamerModal() {
+    if (renamerModal) renamerModal.style.display = 'none';
+  }
+
+  if (renamerModalClose) renamerModalClose.addEventListener('click', closeRenamerModal);
+  if (renamerModalCancel) renamerModalCancel.addEventListener('click', closeRenamerModal);
+
+  if (btnRenamerInvertAll) {
+    btnRenamerInvertAll.addEventListener('click', () => {
+      renamerAllInverted = !renamerAllInverted;
+      currentScannedFolderFiles.forEach(f => {
+        let origParent = f.path.includes('/') ? f.path.substring(0, f.path.lastIndexOf('/')) : '';
+        renamerFolderInversionStates[origParent] = renamerAllInverted;
+      });
+      if (renamerAllInverted) {
+        btnRenamerInvertAll.textContent = 'Numeration Inverted ✓';
+        btnRenamerInvertAll.style.background = '#38bdf8';
+        btnRenamerInvertAll.style.color = '#0f172a';
+      } else {
+        btnRenamerInvertAll.textContent = 'Invert All Numeration ⇄';
+        btnRenamerInvertAll.style.background = 'transparent';
+        btnRenamerInvertAll.style.color = '#38bdf8';
+      }
+      buildAndRenderRenamerTree();
+    });
+  }
+
+  function buildAndRenderRenamerTree() {
+    if (currentScannedFolderFiles.length === 0) return;
+    
+    const selectedLocale = document.querySelector('input[name="folder-locale"]:checked')?.value || 'us';
+    const selectedExt = document.querySelector('input[name="folder-ext"]:checked')?.value || 'jpeg';
+
+    let renameResults = { cleanedFolders: [], cleanedFiles: [], renameCount: 0 };
+    if (window.AEM360Renamer) {
+      renameResults = window.AEM360Renamer.processDroppedFiles(
+        currentScannedFoldersSet,
+        currentScannedFolderFiles,
+        selectedLocale,
+        '',
+        selectedExt,
+        renamerFolderInversionStates
+      );
+    } else {
+      renameResults = {
+        cleanedFolders: Array.from(currentScannedFoldersSet),
+        cleanedFiles: currentScannedFolderFiles.map(f => ({ file: f.file, path: f.path, originalPath: f.path })),
+        renameCount: 0
+      };
+    }
+
+    const { cleanedFolders, cleanedFiles } = renameResults;
+    if (renamerTreeSummary) {
+      renamerTreeSummary.textContent = `${cleanedFolders.length} folder(s), ${cleanedFiles.length} file(s) detected. Edit folder names below:`;
+    }
+
+    const folderGroups = {};
+    cleanedFiles.forEach(cf => {
+      let origParent = cf.originalPath.includes('/') ? cf.originalPath.substring(0, cf.originalPath.lastIndexOf('/')) : '';
+      let origFile = cf.originalPath.includes('/') ? cf.originalPath.substring(cf.originalPath.lastIndexOf('/') + 1) : cf.originalPath;
+      let newParent = cf.path.includes('/') ? cf.path.substring(0, cf.path.lastIndexOf('/')) : '';
+      let newFile = cf.path.includes('/') ? cf.path.substring(cf.path.lastIndexOf('/') + 1) : cf.path;
+
+      if (!folderGroups[origParent]) {
+        folderGroups[origParent] = {
+          newParent: newParent,
+          filesCount: 0,
+          allFiles: []
+        };
+      }
+      folderGroups[origParent].filesCount++;
+      folderGroups[origParent].allFiles.push({
+        orig: origFile,
+        new: newFile,
+        fileObj: cf.file,
+        originalPath: cf.originalPath
+      });
+    });
+
+    const groupKeys = Object.keys(folderGroups);
+    const tree = { _children: {}, _name: 'root' };
+    groupKeys.forEach(origParent => {
+      const group = folderGroups[origParent];
+      const parts = group.newParent.split('/').filter(p => p);
+      let currentLevel = tree;
+      if (parts.length === 0) {
+        tree._info = group;
+      } else {
+        parts.forEach((part, index) => {
+          if (!currentLevel._children[part]) {
+            currentLevel._children[part] = { _children: {}, _name: part, _info: null };
+          }
+          if (index === parts.length - 1) {
+            currentLevel._children[part]._info = group;
+          }
+          currentLevel = currentLevel._children[part];
+        });
+      }
+    });
+
+    renamerCurrentTree = tree;
+
+    function updateRenamerPreviews() {
+      function simulateTraverse(n, pathKeys = []) {
+        let currentPathKeys = [...pathKeys];
+        if (n._id) {
+          const inputEl = document.getElementById(n._id);
+          let newName = inputEl ? inputEl.value.trim() : n._name;
+          const activeLocale = document.querySelector('input[name="folder-locale"]:checked')?.value || 'us';
+          let oldClean = window.AEM360Renamer ? window.AEM360Renamer.cleanFordName(n._name, activeLocale, true) : n._name;
+          newName = window.AEM360Renamer ? window.AEM360Renamer.cleanFordName(newName, activeLocale, true) : newName;
+          currentPathKeys.push({ old: n._name, new: newName, oldClean: oldClean });
+        }
+        if (n._info) {
+          n._info.allFiles.forEach(f => {
+            let finalFileName = f.new;
+            let sortedKeys = [...currentPathKeys].sort((a, b) => b.old.length - a.old.length);
+            sortedKeys.forEach(k => {
+              if (k.old && k.old !== k.new) {
+                let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
+                if (regex.test(finalFileName)) {
+                  finalFileName = finalFileName.replace(regex, k.new);
+                } else if (k.oldClean && k.oldClean !== k.new) {
+                  let cleanRegex = new RegExp(`(?<=^|-)${k.oldClean}(?=-|\\.|$)`, 'gi');
+                  finalFileName = finalFileName.replace(cleanRegex, k.new);
+                }
+              }
+            });
+            if (f._uiNewSpan) {
+              f._uiNewSpan.textContent = finalFileName;
+              if (f._uiUpdateVisibility) f._uiUpdateVisibility();
+            }
+          });
+        }
+        Object.values(n._children).forEach(child => {
+          simulateTraverse(child, currentPathKeys);
+        });
+      }
+      simulateTraverse(tree, []);
+    }
+
+    let nodeIdCounter = 0;
+    function renderTree(node, depth = 0) {
+      const frag = document.createDocumentFragment();
+      const keys = Object.keys(node._children).sort();
+      
+      keys.forEach((key) => {
+        const childNode = node._children[key];
+        childNode._id = 'renamer_tree_node_' + (++nodeIdCounter);
+        const hasChildren = Object.keys(childNode._children).length > 0;
+        
+        const details = document.createElement('details');
+        details.open = false;
+        if (depth !== 0) details.style.marginTop = '4px';
+        
+        const summary = document.createElement('summary');
+        summary.style.cssText = 'cursor: pointer; font-family: system-ui, -apple-system, sans-serif; color: #f8fafc; padding: 2px 0; font-size: 13px; font-weight: 500; user-select: none; transition: color 0.2s; display: flex; align-items: center;';
+        
+        const folderIconSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        folderIconSvg.setAttribute("width", "14"); folderIconSvg.setAttribute("height", "14"); folderIconSvg.setAttribute("viewBox", "0 0 24 24"); folderIconSvg.setAttribute("fill", "#a855f7"); folderIconSvg.setAttribute("stroke", "#c084fc"); folderIconSvg.setAttribute("stroke-width", "1.5"); folderIconSvg.setAttribute("stroke-linecap", "round"); folderIconSvg.setAttribute("stroke-linejoin", "round"); folderIconSvg.style.cssText = 'margin-right: 6px; flex-shrink: 0;';
+        const folderIconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        folderIconPath.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+        folderIconSvg.appendChild(folderIconPath);
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'tree-input';
+        input.id = childNode._id;
+        input.value = childNode._name;
+        input.style.cssText = 'background: rgba(0,0,0,0.3); border: 1px dashed rgba(168, 85, 247, 0.4); color: #c084fc; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; outline: none; margin-left: 4px; width: 220px;';
+        input.addEventListener('click', e => e.stopPropagation());
+        input.addEventListener('keydown', e => e.stopPropagation());
+        input.addEventListener('keyup', e => e.stopPropagation());
+        input.addEventListener('input', e => {
+          e.stopPropagation();
+          updateRenamerPreviews();
+        });
+        
+        summary.appendChild(folderIconSvg);
+        summary.appendChild(input);
+        details.appendChild(summary);
+        
+        const childContainer = document.createElement('div');
+        childContainer.style.cssText = 'border-left: 1px solid rgba(168, 85, 247, 0.2); margin-left: 11px; padding-left: 10px;';
+        
+        if (childNode._info) {
+          const info = childNode._info;
+          const countSpan = document.createElement('span');
+          countSpan.style.cssText = 'font-size: 11px; color: #94a3b8; font-family: monospace; margin-left: 8px;';
+          countSpan.textContent = `(${info.filesCount} files)`;
+          summary.appendChild(countSpan);
+        }
+        
+        if (hasChildren) {
+          childContainer.appendChild(renderTree(childNode, depth + 1));
+        }
+        
+        details.appendChild(childContainer);
+        frag.appendChild(details);
+      });
+      return frag;
+    }
+
+    if (renamerTreeView) {
+      renamerTreeView.replaceChildren();
+      if (groupKeys.length === 0) {
+        const div = document.createElement('div');
+        div.style.cssText = 'color: #cbd5e1; text-align: center; margin-top: 20px; font-size: 13px;';
+        div.textContent = 'No folders found.';
+        renamerTreeView.appendChild(div);
+      } else {
+        const treeContainer = document.createElement('div');
+        treeContainer.style.background = 'rgba(15, 23, 42, 0.6)';
+        treeContainer.style.border = '1px solid rgba(168, 85, 247, 0.3)';
+        treeContainer.style.borderRadius = '8px';
+        treeContainer.style.padding = '12px';
+        treeContainer.appendChild(renderTree(tree));
+        renamerTreeView.appendChild(treeContainer);
+      }
+    }
+  }
+
+  function traverseAndBuildRenamerTree(node, currentPath = '', pathKeys = []) {
+    const finalFiles = [];
+
+    function traverse(n, currPath, pKeys) {
+      let myPath = currPath;
+      let currentPathKeys = [...pKeys];
+      
+      if (n._id) {
+        const inputEl = document.getElementById(n._id);
+        let newName = inputEl ? inputEl.value.trim() : n._name;
+        
+        const activeLocale = document.querySelector('input[name="folder-locale"]:checked')?.value || 'us';
+        let oldClean = n._name;
+        if (window.AEM360Renamer) {
+          oldClean = window.AEM360Renamer.cleanFordName(n._name, activeLocale, true);
+          newName = window.AEM360Renamer.cleanFordName(newName, activeLocale, true);
+        }
+        
+        currentPathKeys.push({ old: n._name, new: newName, oldClean: oldClean });
+        myPath = currPath ? `${currPath}/${newName}` : newName;
+      }
+      
+      if (n._info) {
+        n._info.allFiles.forEach(f => {
+          let finalFileName = f.new;
+          let sortedKeys = [...currentPathKeys].sort((a, b) => b.old.length - a.old.length);
+          sortedKeys.forEach(k => {
+            if (k.old && k.old !== k.new) {
+              let regex = new RegExp(`(?<=^|-)${k.old}(?=-|\\.|$)`, 'g');
+              if (regex.test(finalFileName)) {
+                finalFileName = finalFileName.replace(regex, k.new);
+              } else if (k.oldClean && k.oldClean !== k.new) {
+                let cleanRegex = new RegExp(`(?<=^|-)${k.oldClean}(?=-|\\.|$)`, 'gi');
+                finalFileName = finalFileName.replace(cleanRegex, k.new);
+              }
+            }
+          });
+          
+          let newFilePath = myPath ? `${myPath}/${finalFileName}` : finalFileName;
+          finalFiles.push({
+            path: newFilePath
+          });
+        });
+      }
+      
+      Object.values(n._children).forEach(child => {
+        traverse(child, myPath, currentPathKeys);
+      });
+    }
+
+    traverse(node, currentPath, pathKeys);
+    return finalFiles;
+  }
+
+  if (btnApplyRenamerJson) {
+    btnApplyRenamerJson.addEventListener('click', () => {
+      if (!renamerCurrentTree) return;
+
+      const selectedBrand = document.querySelector('input[name="folder-brand"]:checked')?.value || 'ford';
+      const selectedLocale = document.querySelector('input[name="folder-locale"]:checked')?.value || 'us';
+      const selectedExt = document.querySelector('input[name="folder-ext"]:checked')?.value || 'jpeg';
+      const localeFolder = selectedLocale === 'ca' ? 'en_ca' : 'en_us';
+      let customBasePath = folderBasePathInput ? folderBasePathInput.value.trim() : '';
+
+      if (!customBasePath) {
+        customBasePath = `/content/dam/na/${selectedBrand}/${localeFolder}/images/vehicle/2027/360`;
+      }
+
+      const finalFiles = traverseAndBuildRenamerTree(renamerCurrentTree);
+      const generatedModels = parseColorizerBaseJSON(finalFiles, customBasePath, selectedExt, selectedBrand, localeFolder);
+
+      if (!generatedModels || generatedModels.length === 0) {
+        alert("No models or color structures detected in the tree.");
+        return;
+      }
+
+      const jsonString = JSON.stringify(generatedModels, null, 4);
+      loadJSON(jsonString);
+      closeRenamerModal();
+      showStatus(`Successfully applied renames & generated JSON from folder with ${generatedModels.length} model(s).`, "success");
+    });
+  }
+
+  if (btnGenerateFromFolder) {
+    btnGenerateFromFolder.addEventListener('click', () => {
+      if (currentScannedFolderFiles.length === 0) {
+        alert("Please drop or browse a folder first.");
+        return;
+      }
+
+      const selectedBrand = document.querySelector('input[name="folder-brand"]:checked')?.value || 'ford';
+      const selectedLocale = document.querySelector('input[name="folder-locale"]:checked')?.value || 'us';
+      const selectedExt = document.querySelector('input[name="folder-ext"]:checked')?.value || 'jpeg';
+      const localeFolder = selectedLocale === 'ca' ? 'en_ca' : 'en_us';
+      let customBasePath = folderBasePathInput ? folderBasePathInput.value.trim() : '';
+
+      if (!customBasePath) {
+        customBasePath = `/content/dam/na/${selectedBrand}/${localeFolder}/images/vehicle/2027/360`;
+      }
+
+      let renameResults = { cleanedFolders: [], cleanedFiles: [], renameCount: 0 };
+      if (window.AEM360Renamer) {
+        renameResults = window.AEM360Renamer.processDroppedFiles(
+          currentScannedFoldersSet,
+          currentScannedFolderFiles,
+          selectedLocale,
+          '',
+          selectedExt
+        );
+      } else {
+        renameResults.cleanedFiles = currentScannedFolderFiles.map(f => ({ file: f.file, path: f.path, originalPath: f.path }));
+      }
+
+      const generatedModels = parseColorizerBaseJSON(renameResults.cleanedFiles, customBasePath, selectedExt, selectedBrand, localeFolder);
+
+      if (!generatedModels || generatedModels.length === 0) {
+        alert("No models or color structures detected in the scanned folder.");
+        return;
+      }
+
+      const jsonString = JSON.stringify(generatedModels, null, 4);
+      loadJSON(jsonString);
+      showStatus(`Successfully generated JSON from folder with ${generatedModels.length} model(s).`, "success");
+    });
+  }
+
+  function parseColorizerBaseJSON(cleanedFiles, basePath, extOption = 'jpeg', brand = 'ford', locale = 'en_us') {
+    const modelsMap = {};
+    
+    cleanedFiles.forEach(cf => {
+      const parts = cf.path.split('/');
+      const filteredParts = parts.filter(p => p);
+      
+      const viewIdx = filteredParts.findIndex(p => p.toLowerCase() === 'exterior' || p.toLowerCase() === 'interior');
+      if (viewIdx === -1 || viewIdx === 0) return;
+      
+      const modelId = filteredParts[viewIdx - 1];
+      
+      if (!modelsMap[modelId]) {
+        const modelName = modelId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        const partsBeforeModel = filteredParts.slice(0, viewIdx - 1).join('/');
+        const urlBase = partsBeforeModel ? `${basePath}/${partsBeforeModel}` : basePath;
+        
+        modelsMap[modelId] = {
+          model: modelName,
+          modelId: modelId,
+          brand: brand,
+          locale: locale,
+          exteriorColors: [],
+          wheelTypes: [],
+          interiorColors: [],
+          exterior_angles: 36,
+          exterior_start_angle: 1,
+          exterior360imageurl: `${urlBase}/${modelId}/exterior/{device}/{exteriorcolor}/{wheel}/00{exterior_start_angle}-{exteriorcolor}-{wheel}.${extOption}`.replace(/\/\//g, '/'),
+          "exterior-slider-view": "false",
+          interior_angles: 36,
+          interior_start_angle: 1,
+          "interior-dome-view": "false",
+          interior360imageurl: `${urlBase}/${modelId}/interior/{device}/{interiorcolor}/00{interior_start_angle}-{interiorcolor}.${extOption}`.replace(/\/\//g, '/'),
+          configuratorurl: `&trim=${modelId}`
+        };
+      }
+      const modelObj = modelsMap[modelId];
+      const viewType = filteredParts[viewIdx].toLowerCase();
+      
+      if (viewType === 'exterior') {
+        const extColor = filteredParts[viewIdx + 2];
+        if (extColor && (viewIdx + 2 < filteredParts.length - 1)) {
+          const colorShort = extColor.toLowerCase();
+          const defaultName = colorShort.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+          if (!modelObj.exteriorColors.some(c => c.shortName === colorShort)) {
+            modelObj.exteriorColors.push({
+              name: defaultName,
+              id: "",
+              thumbnail: "",
+              shortName: colorShort,
+              hexcode: "",
+              costlabel: ""
+            });
+          }
+          
+          if (viewIdx + 3 < filteredParts.length - 1) {
+            const wheel = filteredParts[viewIdx + 3];
+            const wheelShort = wheel.toLowerCase();
+            const wheelId = wheel.toUpperCase();
+            if (!modelObj.wheelTypes.some(w => w.id === wheelId)) {
+              modelObj.wheelTypes.push({
+                name: "",
+                id: wheelId,
+                thumbnail: "",
+                shortName: wheelShort,
+                costlabel: ""
+              });
+            }
+          }
+        }
+      } else if (viewType === 'interior') {
+        const intColor = filteredParts[viewIdx + 2];
+        if (intColor && (viewIdx + 2 < filteredParts.length - 1)) {
+          const colorShort = intColor.toLowerCase();
+          const defaultName = colorShort.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+          if (!modelObj.interiorColors.some(c => c.shortName === colorShort)) {
+            modelObj.interiorColors.push({
+              name: defaultName,
+              id: "",
+              thumbnail: "",
+              shortName: colorShort,
+              hexcode: "",
+              costlabel: "",
+              imageURL: ""
+            });
+          }
+        }
+      }
+    });
+    
+    return Object.values(modelsMap);
   }
 
   // ── EXPORT ACTIONS (COPY / DOWNLOAD) ──────────────────────────────────
