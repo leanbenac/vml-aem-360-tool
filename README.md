@@ -6,6 +6,8 @@
 
 - **Inyección de Estructuras Complejas:** Permite arrastrar y soltar (`Drag & Drop`) múltiples carpetas anidadas directamente desde tu computadora hacia AEM. La herramienta recreará automáticamente todo el árbol de carpetas en el servidor antes de subir los archivos.
 - **Direct Binary Upload:** Utiliza el motor moderno de subida de AEM Cloud Service. Esto garantiza que los microservicios de Adobe (*Asset Compute*) se activen correctamente, generando todas las *renditions* (miniaturas) necesarias y evitando los errores de "missing renditions".
+- **Direct Upload Inteligente:** Al usar el modo "Direct Upload" (mantener jerarquías originales), la extensión es capaz de detectar inteligentemente si faltan subcarpetas intermedias (ej. carpetas con sufijos de trim/versión como `64F`) analizando el nombre de los archivos. Inyecta estas carpetas faltantes automáticamente y aplica una **Sanitización AEM-Safe** forzando minúsculas y guiones para que la estructura generada cumpla estrictamente con las validaciones de Adobe Experience Manager.
+- **Edición Sincronizada de UI:** La interfaz permite visualizar el árbol que se va a subir. Si el usuario decide editar o renombrar una carpeta manualmente en la previsualización, la extensión buscará ese cambio en el interior de los nombres de los archivos correspondientes y los actualizará sincrónicamente (incluso aplicando fallbacks para detectar variaciones con mayúsculas/espacios o versiones sanitizadas).
 - **Carga Concurrente Controlada:** Sube múltiples archivos y crea múltiples carpetas al mismo tiempo (procesando de forma segura con una concurrencia máxima de 10 peticiones simultáneas y un micro-delay de 30ms) para no saturar la memoria del navegador ni los servidores de AEM, reduciendo drásticamente los tiempos de espera.
 - **Auto-Aprobación (Auto-Approve):** Inyecta automáticamente el estado `dam:status=approved` en la metadata de cada archivo apenas termina de subirse, eliminando por completo la necesidad de aprobación manual posterior.
 - **Resiliencia Automática (Exponential Backoff):** Si AEM se satura, arroja errores 403 o expira la sesión, la herramienta pausa inteligentemente, refresca los tokens CSRF y reintenta la subida hasta 5 veces por su cuenta sin abortar el proceso general.
@@ -55,6 +57,15 @@ Para instalar la extensión en tu navegador Chrome (o Edge/Brave basados en Chro
 ## ⚠️ Notas Importantes
 - **Cuidado con la Ruta Destino:** Asegurate de escribir correctamente la ruta base en el popup. La herramienta no cuenta con "Memoria de Ruta" por motivos de seguridad; esto fuerza a cada operador a confirmar conscientemente el destino de los archivos antes de cada carga para evitar inyecciones en proyectos ajenos.
 - **Red:** Si vas a subir miles de archivos pesados, asegurate de tener una conexión a internet estable. Si ocurre un microcorte, la consola integrada te mostrará qué archivos específicos fallaron para que puedas reintentarlos.
+
+## 🧪 Pruebas Unitarias (Unit Tests)
+
+El proyecto cuenta con una suite de pruebas unitarias integradas para validar la lógica del procesador y renombrador de archivos (incluyendo la conversión regional de locale y mapeo de extensiones de imagen).
+
+Para correr las pruebas unitarias en tu entorno local, ejecutá el siguiente comando en la terminal:
+```bash
+node --test test/content-asset-renamer.test.js
+```
 
 ## 🛡️ Seguridad y Privacidad (AppSec)
 
