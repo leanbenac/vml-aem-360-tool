@@ -1216,3 +1216,108 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
 }
+
+/* --- Accordion Cards for Init Tab --- */
+details.accordion-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+details.accordion-card:hover {
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+details.accordion-card[open] {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.04), rgba(0, 229, 255, 0.02));
+  box-shadow: 0 4px 25px rgba(168, 85, 247, 0.08);
+}
+
+summary.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+summary.accordion-header::-webkit-details-marker,
+summary.accordion-header::marker {
+  display: none;
+}
+
+summary.accordion-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.accordion-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.accordion-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--accent-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.accordion-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.accordion-title-text h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: 0.3px;
+  border: none;
+  padding: 0;
+}
+
+.accordion-title-text p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.accordion-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease, color 0.3s ease;
+  flex-shrink: 0;
+}
+
+details.accordion-card[open] .accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--accent-purple);
+}
+
+.accordion-body {
+  padding: 0 20px 20px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  margin-top: 4px;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

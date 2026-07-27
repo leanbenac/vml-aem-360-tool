@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const importText = document.getElementById('import-text');
   const btnImportJson = document.getElementById('btn-import-json');
   const btnClearWorkspace = document.getElementById('btn-clear-workspace');
+  const btnClearWorkspaceSidebar = document.getElementById('btn-clear-workspace-sidebar');
+  const clearConfirmModal = document.getElementById('clear-confirm-modal');
+  const btnCancelClearModal = document.getElementById('btn-cancel-clear-modal');
+  const btnConfirmClearModal = document.getElementById('btn-confirm-clear-modal');
   const dropzone = document.getElementById('dropzone');
   const fileUploader = document.getElementById('file-uploader');
   const importStatus = document.getElementById('import-status');
@@ -224,6 +228,32 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetPane = document.getElementById(targetTab);
       if (targetPane) {
         targetPane.classList.add('active');
+      }
+    });
+  });
+
+  // Switch tab via data-target-tab attribute (CSP compliant)
+  document.querySelectorAll('[data-target-tab]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = el.dataset.targetTab;
+      const tabBtn = document.querySelector(`.w-tab-btn[data-tab="${targetId}"]`);
+      if (tabBtn) {
+        tabBtn.click();
+      }
+    });
+  });
+
+  // Exclusive accordion for Init tab (tabImport)
+  const accordions = document.querySelectorAll('#tabImport details.accordion-card');
+  accordions.forEach(acc => {
+    acc.addEventListener('toggle', () => {
+      if (acc.open) {
+        accordions.forEach(other => {
+          if (other !== acc) {
+            other.open = false;
+          }
+        });
       }
     });
   });
@@ -648,6 +678,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── STATE COMPILER & RENDER ───────────────────────────────────────────
   function refreshUI() {
+    // Update active model banners
+    const activeModel = activeModelIndex >= 0 && activeModelIndex < modelsState.length ? modelsState[activeModelIndex] : null;
+    const modelName = activeModel ? (activeModel.model || 'Untitled Model') : '';
+    
+    const banner = document.getElementById('active-model-banner');
+    if (banner) {
+      banner.style.display = activeModel ? 'flex' : 'none';
+    }
+
+    document.querySelectorAll('.active-model-name-display').forEach(el => {
+      el.textContent = modelName;
+    });
+
     renderModelsList();
     renderModelForm();
     renderExteriorColors();
@@ -659,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Render interactive color swatch UI (or unassigned badge)
-  function renderSwatchCell(color, onUpdateHex) {
+  function renderSwatchCell(color, type, onUpdateHex) {
     const container = document.createElement('div');
     container.style.cssText = 'display: flex; align-items: center; gap: 8px; position: relative; max-width: 220px;';
 
@@ -670,8 +713,13 @@ document.addEventListener('DOMContentLoaded', () => {
     pickerInput.title = 'Click to choose Hex Code';
 
     pickerInput.addEventListener('change', (e) => {
-      color.hexcode = e.target.value;
-      if (onUpdateHex) onUpdateHex(e.target.value);
+      const originalColor = { ...color };
+      const newHex = e.target.value;
+      const newValues = { ...color, hexcode: newHex };
+      
+      updateAndPropagateColor(type, originalColor, newValues);
+      
+      if (onUpdateHex) onUpdateHex(newHex);
       refreshUI();
     });
 
@@ -891,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
       
       const tdSwatch = document.createElement('td');
-      tdSwatch.appendChild(renderSwatchCell(color, (newHex) => {
+      tdSwatch.appendChild(renderSwatchCell(color, 'exterior', (newHex) => {
         if (editingExtColorIdx === cIdx) {
           ecHex.value = newHex;
           ecPicker.value = newHex;
@@ -1068,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
 
       const tdSwatch = document.createElement('td');
-      tdSwatch.appendChild(renderSwatchCell(color, (newHex) => {
+      tdSwatch.appendChild(renderSwatchCell(color, 'interior', (newHex) => {
         if (editingIntColorIdx === cIdx) {
           icHex.value = newHex;
           icPicker.value = newHex;
@@ -1544,23 +1592,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Propagate all color updates (name, id, shortName, hexcode, costlabel, imageURL) to all models
+  function updateAndPropagateColor(type, originalColor, newValues) {
+    if (!originalColor || !originalColor.name) return;
+    
+    const origName = originalColor.name.trim().toLowerCase();
+    const origId = (originalColor.id || '').trim().toLowerCase();
+    const origShort = (originalColor.shortName || '').trim().toLowerCase();
+
+    // Find all models containing a matching color
+    const affectedModels = [];
+    modelsState.forEach(m => {
+      const colors = type === 'exterior' ? m.exteriorColors : m.interiorColors;
+      const hasMatch = (colors || []).some(c => {
+        const cName = c.name.trim().toLowerCase();
+        const cId = (c.id || '').trim().toLowerCase();
+        const cShort = (c.shortName || '').trim().toLowerCase();
+        return cName === origName || (origId && cId === origId) || cShort === origShort;
+      });
+      if (hasMatch) {
+        affectedModels.push(m.model || 'Untitled Model');
+      }
+    });
+
+    if (affectedModels.length > 0) {
+      alert(`Se va a modificar el color "${originalColor.name}" que está presente en ${affectedModels.length} modelo(s): ${affectedModels.join(', ')}.`);
+    }
+
+    // Apply updates to all occurrences in all models
+    modelsState.forEach(m => {
+      const colors = type === 'exterior' ? m.exteriorColors : m.interiorColors;
+      (colors || []).forEach(c => {
+        const cName = c.name.trim().toLowerCase();
+        const cId = (c.id || '').trim().toLowerCase();
+        const cShort = (c.shortName || '').trim().toLowerCase();
+        
+        if (cName === origName || (origId && cId === origId) || cShort === origShort) {
+          c.name = newValues.name;
+          c.id = newValues.id;
+          c.shortName = newValues.shortName;
+          c.hexcode = newValues.hexcode;
+          c.costlabel = newValues.costlabel;
+          if (type === 'interior' && newValues.imageURL !== undefined) {
+            c.imageURL = newValues.imageURL;
+          }
+        }
+      });
+    });
+  }
+
   // Propagate ID and Hex updates to all occurrences of a color name
-  function propagateColorUpdates(name, id, hex) {
+  function propagateColorUpdates(name, id, hex, shortName, costlabel, type) {
     if (!name) return;
     const targetName = name.trim().toLowerCase();
     modelsState.forEach(m => {
-      (m.exteriorColors || []).forEach(c => {
-        if (c.name.trim().toLowerCase() === targetName) {
-          c.id = id;
-          c.hexcode = hex;
-        }
-      });
-      (m.interiorColors || []).forEach(c => {
-        if (c.name.trim().toLowerCase() === targetName) {
-          c.id = id;
-          c.hexcode = hex;
-        }
-      });
+      if (type === 'exterior' || !type) {
+        (m.exteriorColors || []).forEach(c => {
+          if (c.name.trim().toLowerCase() === targetName) {
+            c.id = id;
+            c.hexcode = hex;
+            if (shortName) c.shortName = shortName;
+            if (costlabel !== undefined) c.costlabel = costlabel;
+          }
+        });
+      }
+      if (type === 'interior' || !type) {
+        (m.interiorColors || []).forEach(c => {
+          if (c.name.trim().toLowerCase() === targetName) {
+            c.id = id;
+            c.hexcode = hex;
+            if (shortName) c.shortName = shortName;
+            if (costlabel !== undefined) c.costlabel = costlabel;
+          }
+        });
+      }
     });
   }
 
@@ -1587,13 +1692,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editingExtColorIdx >= 0) {
       // Update in-place
       const targetColor = activeModel.exteriorColors[editingExtColorIdx];
-      targetColor.name = name;
-      targetColor.id = id;
-      targetColor.shortName = short;
-      targetColor.hexcode = hex;
-      targetColor.costlabel = costText;
+      const originalColor = { ...targetColor };
       
-      propagateColorUpdates(name, id, hex);
+      const newValues = {
+        name: name,
+        id: id,
+        shortName: short,
+        hexcode: hex,
+        costlabel: costText
+      };
+      
+      updateAndPropagateColor('exterior', originalColor, newValues);
       
       editingExtColorIdx = -1;
       const submitBtn = addExtColorForm.querySelector('button[type="submit"]');
@@ -1616,7 +1725,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       activeModel.exteriorColors.push(newColor);
-      propagateColorUpdates(name, id, hex);
+      propagateColorUpdates(name, id, hex, short, costText, 'exterior');
     }
     
     // Reset fields
@@ -1688,14 +1797,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (editingIntColorIdx >= 0) {
       const targetColor = activeModel.interiorColors[editingIntColorIdx];
-      targetColor.name = name;
-      targetColor.id = id;
-      targetColor.shortName = short;
-      targetColor.hexcode = hex;
-      targetColor.costlabel = costText;
-      targetColor.imageURL = imgUrl;
-      
-      propagateColorUpdates(name, id, hex);
+      const originalColor = { ...targetColor };
+
+      const newValues = {
+        name: name,
+        id: id,
+        shortName: short,
+        hexcode: hex,
+        costlabel: costText,
+        imageURL: imgUrl
+      };
+
+      updateAndPropagateColor('interior', originalColor, newValues);
       
       editingIntColorIdx = -1;
       const submitBtn = addIntColorForm.querySelector('button[type="submit"]');
@@ -1711,7 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
         imageURL: imgUrl
       };
       activeModel.interiorColors.push(newColor);
-      propagateColorUpdates(name, id, hex);
+      propagateColorUpdates(name, id, hex, short, costText, 'interior');
     }
 
     // Reset Form
@@ -1845,14 +1958,46 @@ document.addEventListener('DOMContentLoaded', () => {
     loadJSON(text);
   });
 
-  // Clear workspace
-  btnClearWorkspace.addEventListener('click', () => {
-    if (confirm("Are you sure you want to clear the workspace? This will delete all current models and unsaved progress.")) {
+  // Clear workspace handler (In-App Modal)
+  const handleClearWorkspace = () => {
+    if (clearConfirmModal) {
+      clearConfirmModal.style.display = 'flex';
+    } else {
       initDefaultState();
       importText.value = "";
       showStatus("Workspace cleared.", "info");
     }
-  });
+  };
+
+  if (btnClearWorkspace) {
+    btnClearWorkspace.addEventListener('click', handleClearWorkspace);
+  }
+  if (btnClearWorkspaceSidebar) {
+    btnClearWorkspaceSidebar.addEventListener('click', handleClearWorkspace);
+  }
+
+  if (btnCancelClearModal) {
+    btnCancelClearModal.addEventListener('click', () => {
+      if (clearConfirmModal) clearConfirmModal.style.display = 'none';
+    });
+  }
+
+  if (btnConfirmClearModal) {
+    btnConfirmClearModal.addEventListener('click', () => {
+      if (clearConfirmModal) clearConfirmModal.style.display = 'none';
+      initDefaultState();
+      importText.value = "";
+      showStatus("Workspace cleared.", "info");
+    });
+  }
+
+  if (clearConfirmModal) {
+    clearConfirmModal.addEventListener('click', (e) => {
+      if (e.target === clearConfirmModal) {
+        clearConfirmModal.style.display = 'none';
+      }
+    });
+  }
 
   // Drag and Drop files
   dropzone.addEventListener('click', () => {
