@@ -1320,4 +1320,104 @@ details.accordion-card[open] .accordion-chevron {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
+}
+
+/* --- Smart Import Review Modal Styles --- */
+.smart-import-card {
+  transition: all 0.25s ease;
+}
+
+.conflict-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.conflict-item-row:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.swatch-compare-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.swatch-compare-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.choice-btn-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.choice-btn {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.choice-btn:hover {
+  color: #fff;
+}
+
+.choice-btn.active-keep {
+  background: rgba(148, 163, 184, 0.2);
+  color: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.choice-btn.active-update {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+
+.new-color-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.model-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 4px;
+}
+
