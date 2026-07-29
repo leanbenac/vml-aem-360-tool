@@ -354,6 +354,7 @@ function injectDropzoneUI() {
     dropzoneContainer.appendChild(h('div', { id: 'aem-360-logs', className: 'aem-360-custom-scroll', style: 'display: none;', textContent: 'Waiting for files...' }));
     
     dropzoneContainer.appendChild(h('div', { id: 'aem-360-finish-container', style: 'display: none; padding: 10px; background: #0f172a; border-top: 1px solid #334155;' },
+        h('button', { id: 'aem-360-retry-failed-btn', style: 'display: none; width: 100%; padding: 8px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 4px; font-weight: bold; cursor: pointer; text-align: center; margin-bottom: 8px;' }),
         h('button', { id: 'aem-360-finish-btn', style: 'width: 100%; padding: 8px; background: #38bdf8; color: #0f172a; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;', textContent: 'Finish Upload and Close' })
     ));
 
@@ -1407,7 +1408,7 @@ async function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             console.error('Error checking collisions:', e);
         }
 
-        const startUpload = () => {
+        const startUpload = (filesToUploadFiltered = finalFiles) => {
             document.getElementById('aem-360-review-container').style.display = 'none';
             
             const abortContainer = document.getElementById('aem-360-abort-container');
@@ -1421,19 +1422,32 @@ async function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
             }
 
             logToUI('Starting upload of assets...', 'success');
-            processUploads(sortedFolders, finalFiles, progressTextFolders, progressTextFiles, progressFill);
+            processUploads(sortedFolders, filesToUploadFiltered, progressTextFolders, progressTextFiles, progressFill);
         };
 
         if (collisions.length > 0) {
             btnApprove.textContent = ' Approve & Upload';
             btnApprove.disabled = false;
             
-            showConflictModal(collisions, () => {
+            showConflictModal(collisions, 
                 // Option: Replace All
-                startUpload();
-            }, () => {
+                () => {
+                    startUpload();
+                }, 
+                // Option: Skip Existing (Upload only missing)
+                () => {
+                    const missingFiles = finalFiles.filter(ff => !collisions.some(c => c.path === ff.path));
+                    if (missingFiles.length === 0) {
+                        logToUI('All assets already exist in AEM. Nothing to upload.', 'info');
+                        return;
+                    }
+                    startUpload(missingFiles);
+                }, 
                 // Option: Cancelled
-            });
+                () => {
+                    // Do nothing, user cancelled
+                }
+            );
         } else {
             btnApprove.textContent = ' Approve & Upload';
             btnApprove.disabled = false;
@@ -1442,7 +1456,7 @@ async function finalizeAnalysis(foldersToCreate, filesToUpload, dropArea) {
     };
 }
 
-async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
+async function uploadSingleFile(fileObj, tokenRef, retries = 10) {
     let targetFolder = `${currentBasePath}/${fileObj.path.substring(0, fileObj.path.lastIndexOf('/'))}`.replace(/\/\//g, '/');
     if (targetFolder.endsWith('/')) targetFolder = targetFolder.slice(0, -1);
     
@@ -1556,7 +1570,7 @@ async function uploadSingleFile(fileObj, tokenRef, retries = 5) {
             if (attempt === retries) {
                 throw error;
             }
-            const backoffMs = 2000 * Math.pow(2, attempt - 1) + (Math.random() * 1000); // Exponential backoff + Jitter
+            const backoffMs = Math.min(15000, 2000 * Math.pow(2, attempt - 1)) + (Math.random() * 1000); // Exponential backoff capped at 15s + Jitter
             logToUI(`Retrying upload for ${fileName} (Attempt ${attempt + 1}/${retries})...`, 'warn');
             await new Promise(res => setTimeout(res, backoffMs));
         }
@@ -1569,6 +1583,7 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
     let timerInterval = null;
     let startTime = Date.now();
     const timeEl = document.getElementById('aem-360-progress-time');
+    const failedFilesList = [];
 
     if (timeEl) {
         timerInterval = setInterval(() => {
@@ -1753,6 +1768,7 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
             } catch (e) {
                 const failedFileName = fileObj.path.split('/').pop();
                 logToUI(`Error uploading ${failedFileName}: ${e.message}`, 'error');
+                failedFilesList.push(fileObj);
                 filesFailed++;
                 textFiles.textContent = `Files: ${filesDone} / ${files.length} (${filesFailed} err, ${filesSkipped} skip)`;
                 progressFill.style.width = `${((filesDone + filesFailed + filesSkipped) / files.length) * 100}%`;
@@ -1769,12 +1785,36 @@ async function processUploads(folders, files, textFolders, textFiles, progressFi
         if (filesFailed > 0 || foldersFailed > 0 || filesSkipped > 0) {
             logToUI(`Folders: ${foldersDone} OK, ${foldersFailed} Errors`, 'error');
             logToUI(`Files: ${filesDone} OK, ${filesFailed} Errors, ${filesSkipped} Skipped`, 'error');
+            if (failedFilesList.length > 0) {
+                logToUI(`=== LIST OF FAILED FILES ===`, 'error');
+                failedFilesList.forEach(fObj => {
+                    logToUI(`• ${fObj.path}`, 'error');
+                });
+            }
         } else {
             logToUI(`Folders: ${foldersDone}/${folders.length} | Files: ${filesDone}/${files.length}`, 'success');
         }
         
-        const finishBtn = document.getElementById('aem-360-finish-container');
-        if (finishBtn) finishBtn.style.display = 'block';
+        const finishContainer = document.getElementById('aem-360-finish-container');
+        if (finishContainer) {
+            finishContainer.style.display = 'block';
+            
+            const retryBtn = document.getElementById('aem-360-retry-failed-btn');
+            if (retryBtn) {
+                if (failedFilesList.length > 0) {
+                    retryBtn.style.display = 'block';
+                    retryBtn.textContent = `Retry Failed Files (${failedFilesList.length})`;
+                    retryBtn.onclick = () => {
+                        retryBtn.style.display = 'none';
+                        finishContainer.style.display = 'none';
+                        logToUI(`=== RETRYING ${failedFilesList.length} FAILED FILES ===`, 'warn');
+                        processUploads(folders, failedFilesList, textFolders, textFiles, progressFill);
+                    };
+                } else {
+                    retryBtn.style.display = 'none';
+                }
+            }
+        }
 
     } catch (err) {
         logToUI(`CRITICAL ERROR: ${err.message}`, 'error');
@@ -1808,7 +1848,7 @@ async function promisePool(items, limit, fn) {
     await Promise.all(workers);
 }
 
-function showConflictModal(collisions, onReplace, onCancel) {
+function showConflictModal(collisions, onReplace, onSkipExisting, onCancel) {
     const modalId = 'aem-360-conflict-modal';
     const existing = document.getElementById(modalId);
     if (existing) existing.remove();
@@ -1856,28 +1896,48 @@ function showConflictModal(collisions, onReplace, onCancel) {
     const footer = document.createElement('div');
     footer.style.cssText = 'display: flex; flex-direction: column; gap: 8px; width: 100%;';
 
+    const btnSkip = document.createElement('button');
+    btnSkip.type = 'button';
+    btnSkip.style.cssText = 'width: 100%; background: #38bdf8; border: none; color: #0f172a; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); text-align: center;';
+    btnSkip.textContent = 'Skip Existing (Upload Only Missing)';
+    btnSkip.onclick = () => {
+        overlay.remove();
+        onSkipExisting();
+    };
+    btnSkip.onmouseenter = () => { btnSkip.style.background = '#0ea5e9'; };
+    btnSkip.onmouseleave = () => { btnSkip.style.background = '#38bdf8'; };
+
     const btnReplace = document.createElement('button');
     btnReplace.type = 'button';
-    btnReplace.style.cssText = 'width: 100%; background: #ef4444; border: none; color: #f8fafc; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2); text-align: center;';
+    btnReplace.style.cssText = 'width: 100%; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; text-align: center;';
     btnReplace.textContent = 'Replace All';
     btnReplace.onclick = () => {
         overlay.remove();
         onReplace();
     };
-    btnReplace.onmouseenter = () => { btnReplace.style.background = '#dc2626'; };
-    btnReplace.onmouseleave = () => { btnReplace.style.background = '#ef4444'; };
+    btnReplace.onmouseenter = () => { 
+        btnReplace.style.background = 'rgba(239, 68, 68, 0.2)'; 
+        btnReplace.style.borderColor = '#ef4444';
+        btnReplace.style.color = '#f8fafc';
+    };
+    btnReplace.onmouseleave = () => { 
+        btnReplace.style.background = 'rgba(239, 68, 68, 0.1)'; 
+        btnReplace.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        btnReplace.style.color = '#fca5a5';
+    };
 
     const btnCancel = document.createElement('button');
     btnCancel.type = 'button';
-    btnCancel.style.cssText = 'width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #f8fafc; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; text-align: center;';
+    btnCancel.style.cssText = 'width: 100%; background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; border-radius: 6px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; text-align: center;';
     btnCancel.textContent = 'Cancel';
     btnCancel.onclick = () => {
         overlay.remove();
         onCancel();
     };
-    btnCancel.onmouseenter = () => { btnCancel.style.background = 'rgba(255,255,255,0.05)'; };
+    btnCancel.onmouseenter = () => { btnCancel.style.background = 'rgba(255, 255, 255, 0.05)'; };
     btnCancel.onmouseleave = () => { btnCancel.style.background = 'transparent'; };
 
+    footer.appendChild(btnSkip);
     footer.appendChild(btnReplace);
     footer.appendChild(btnCancel);
     modal.appendChild(footer);

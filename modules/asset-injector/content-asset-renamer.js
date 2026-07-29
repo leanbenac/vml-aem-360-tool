@@ -59,9 +59,10 @@ window.AEM360Renamer = {
         const colorOriginals = new Set();
         filesToUpload.forEach(fileObj => {
             let pathParts = fileObj.path.split('/');
+            let isExterior = pathParts.some(p => p.toLowerCase() === 'exterior');
             let devIdx = pathParts.findIndex(p => ['desktop', 'mobile', 'tablet'].includes(p.toLowerCase()));
             
-            if (devIdx !== -1) {
+            if (isExterior && devIdx !== -1) {
                 for (let i = devIdx + 1; i < pathParts.length - 1; i++) {
                     let p = pathParts[i].toLowerCase();
                     if (p !== 'exterior' && p !== 'interior') {
