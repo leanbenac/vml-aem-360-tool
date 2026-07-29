@@ -252,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetPane) {
         targetPane.classList.add('active');
       }
+      updateActiveModelBanner();
     });
   });
 
@@ -728,7 +729,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (matchingWheelsInState.length === 0) {
-        newWheels.push(w);
+        newWheels.push({
+          parsed: w,
+          targetScope: 'all',
+          selectedModelIndices: modelsState.map((_, i) => i),
+          isIncluded: true
+        });
       } else {
         // Wheel exists in state! Check if display name needs populating/updating
         matchingWheelsInState.forEach(mw => {
@@ -925,12 +931,73 @@ document.addEventListener('DOMContentLoaded', () => {
       conflictsSection.style.display = 'none';
     }
 
-    // 4. Render New Colors Section
-    if (diffReport.unmatchedList.length > 0) {
-      newColorsSection.style.display = 'block';
-      newColorsCount.textContent = diffReport.unmatchedList.length;
-      newColorsContainer.replaceChildren();
+    // 3. Render VDM Sales Code ID Updates Section
+    if (diffReport.updatedIdsList.length > 0) {
+      idUpdatesSection.style.display = 'block';
+      idUpdatesCount.textContent = diffReport.updatedIdsList.length;
+      idUpdatesContainer.replaceChildren();
 
+      diffReport.updatedIdsList.forEach(item => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 8px 12px; font-size: 12px;';
+        row.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-weight: 700; color: #f8fafc;">${escapeHTML(item.colorName)}</span>
+            <span style="font-size: 11px; color: #94a3b8;">${item.currentId ? `(Current ID: ${escapeHTML(item.currentId)})` : '(No ID)'}</span>
+            <span style="color: #38bdf8; font-weight: 700;">➔ New Sales Code: ${escapeHTML(item.newId)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 10.5px; color: #94a3b8;">Models: ${escapeHTML(item.models.join(', '))}</span>
+            <label class="checkbox-container" style="color: #38bdf8; font-size: 10px;">
+              <input type="checkbox" ${item.isIncluded ? 'checked' : ''} class="id-update-cb">
+              <span class="checkbox-checkmark"></span>
+              Update ID
+            </label>
+          </div>
+        `;
+        const cb = row.querySelector('.id-update-cb');
+        cb.addEventListener('change', () => { item.isIncluded = cb.checked; });
+        idUpdatesContainer.appendChild(row);
+      });
+    } else {
+      idUpdatesSection.style.display = 'none';
+    }
+
+    // 4. Render Wheel Display Name Updates Section
+    if (diffReport.wheelUpdatesList && diffReport.wheelUpdatesList.length > 0) {
+      wheelUpdatesSection.style.display = 'block';
+      wheelUpdatesCount.textContent = diffReport.wheelUpdatesList.length;
+      wheelUpdatesContainer.replaceChildren();
+
+      diffReport.wheelUpdatesList.forEach(item => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 6px; padding: 8px 12px; font-size: 12px;';
+        row.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-weight: 700; color: #f472b6; font-family: var(--font-mono);">${escapeHTML(item.wheelId)}</span>
+            <span style="font-size: 11px; color: #94a3b8;">${escapeHTML(item.currentName)}</span>
+            <span style="color: #f472b6; font-weight: 700;">➔ ${escapeHTML(item.newName)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 10.5px; color: #94a3b8;">Models: ${escapeHTML(item.models.join(', '))}</span>
+            <label class="checkbox-container" style="color: #f472b6; font-size: 10px;">
+              <input type="checkbox" ${item.isIncluded ? 'checked' : ''} class="wheel-update-cb">
+              <span class="checkbox-checkmark"></span>
+              Update Name
+            </label>
+          </div>
+        `;
+        const cb = row.querySelector('.wheel-update-cb');
+        cb.addEventListener('change', () => { item.isIncluded = cb.checked; });
+        wheelUpdatesContainer.appendChild(row);
+      });
+    } else {
+      wheelUpdatesSection.style.display = 'none';
+    }
+
+    // 5. Render New Colors Section
+    function renderNewColorsRows() {
+      newColorsContainer.replaceChildren();
       diffReport.unmatchedList.forEach((item, itemIdx) => {
         const card = document.createElement('div');
         card.className = 'new-color-card';
@@ -946,21 +1013,21 @@ document.addEventListener('DOMContentLoaded', () => {
               ${colorHex ? `<span style="font-family: monospace; font-size: 11px; color: #a7f3d0; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px;">${escapeHTML(colorHex)}</span>` : '<span style="font-size: 10px; color: #fbbf24;">(No Hex)</span>'}
               ${item.parsed.costlabel ? `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">${escapeHTML(item.parsed.costlabel)}</span>` : ''}
             </div>
-            <button type="button" class="btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}" id="btn-toggle-include-${itemIdx}" style="font-size: 10px; padding: 4px 10px;">
+            <button type="button" class="btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}" style="font-size: 10px; padding: 4px 10px;">
               ${item.isIncluded ? '✓ Included' : '+ Include Color'}
             </button>
           </div>
 
-          <div id="new-color-controls-${itemIdx}" style="display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+          <div style="display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
             <div style="display: flex; align-items: center; gap: 20px; font-size: 11.5px;">
               <span style="color: #94a3b8; font-weight: 600;">Color Category:</span>
               <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="color-type-${itemIdx}" value="exterior" ${item.typeChoice === 'exterior' ? 'checked' : ''}>
+                <input type="radio" name="color-type-${itemIdx}" value="exterior" ${item.typeChoice === 'exterior' ? 'checked' : ''} class="new-color-type-radio">
                 <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
                 Exterior Color
               </label>
               <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="color-type-${itemIdx}" value="interior" ${item.typeChoice === 'interior' ? 'checked' : ''}>
+                <input type="radio" name="color-type-${itemIdx}" value="interior" ${item.typeChoice === 'interior' ? 'checked' : ''} class="new-color-type-radio">
                 <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
                 Interior Color
               </label>
@@ -969,21 +1036,21 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="display: flex; align-items: center; gap: 20px; font-size: 11.5px;">
               <span style="color: #94a3b8; font-weight: 600;">Target Models:</span>
               <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="model-target-scope-${itemIdx}" value="all" ${item.targetScope === 'all' ? 'checked' : ''}>
+                <input type="radio" name="model-target-scope-${itemIdx}" value="all" ${item.targetScope === 'all' ? 'checked' : ''} class="new-color-scope-radio">
                 <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
                 All Models (${modelsState.length})
               </label>
               <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="model-target-scope-${itemIdx}" value="specific" ${item.targetScope === 'specific' ? 'checked' : ''}>
+                <input type="radio" name="model-target-scope-${itemIdx}" value="specific" ${item.targetScope === 'specific' ? 'checked' : ''} class="new-color-scope-radio">
                 <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
                 Select Specific Models
               </label>
             </div>
 
-            <div id="model-grid-container-${itemIdx}" class="model-checkbox-grid" style="display: ${item.targetScope === 'specific' ? 'grid' : 'none'};">
+            <div class="model-checkbox-grid" style="display: ${item.targetScope === 'specific' ? 'grid' : 'none'};">
               ${modelsState.map((m, mIdx) => `
                 <label class="checkbox-container" style="font-size: 11px; color: #cbd5e1;">
-                  <input type="checkbox" class="model-select-cb-${itemIdx}" value="${mIdx}" ${item.selectedModelIndices.includes(mIdx) ? 'checked' : ''}>
+                  <input type="checkbox" value="${mIdx}" ${item.selectedModelIndices.includes(mIdx) ? 'checked' : ''} class="new-color-model-cb">
                   <span class="checkbox-checkmark"></span>
                   ${escapeHTML(m.model || 'Untitled Model')}
                 </label>
@@ -992,36 +1059,26 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
 
-        newColorsContainer.appendChild(card);
-
-        // Bind control listeners for this card
-        const btnToggleInclude = card.querySelector(`#btn-toggle-include-${itemIdx}`);
-        const controlsDiv = card.querySelector(`#new-color-controls-${itemIdx}`);
-        const typeRadios = card.querySelectorAll(`input[name="color-type-${itemIdx}"]`);
-        const scopeRadios = card.querySelectorAll(`input[name="model-target-scope-${itemIdx}"]`);
-        const gridContainer = card.querySelector(`#model-grid-container-${itemIdx}`);
-        const modelCbs = card.querySelectorAll(`.model-select-cb-${itemIdx}`);
-
-        btnToggleInclude.addEventListener('click', () => {
+        const toggleBtn = card.querySelector('button');
+        toggleBtn.addEventListener('click', () => {
           item.isIncluded = !item.isIncluded;
-          btnToggleInclude.textContent = item.isIncluded ? '✓ Included' : '+ Include Color';
-          btnToggleInclude.className = `btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}`;
-          controlsDiv.style.display = item.isIncluded ? 'flex' : 'none';
+          renderNewColorsRows();
         });
 
+        const typeRadios = card.querySelectorAll('.new-color-type-radio');
         typeRadios.forEach(r => {
-          r.addEventListener('change', () => {
-            item.typeChoice = r.value;
-          });
+          r.addEventListener('change', () => { item.typeChoice = r.value; });
         });
 
+        const scopeRadios = card.querySelectorAll('.new-color-scope-radio');
         scopeRadios.forEach(r => {
           r.addEventListener('change', () => {
             item.targetScope = r.value;
-            gridContainer.style.display = item.targetScope === 'specific' ? 'grid' : 'none';
+            renderNewColorsRows();
           });
         });
 
+        const modelCbs = card.querySelectorAll('.new-color-model-cb');
         modelCbs.forEach(cb => {
           cb.addEventListener('change', () => {
             const mIdx = parseInt(cb.value, 10);
@@ -1032,9 +1089,129 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
         });
+
+        newColorsContainer.appendChild(card);
       });
+    }
+
+    if (diffReport.unmatchedList.length > 0) {
+      newColorsSection.style.display = 'block';
+      newColorsCount.textContent = diffReport.unmatchedList.length;
+      renderNewColorsRows();
+
+      const btnNewColorsIncludeAll = document.getElementById('btn-new-colors-include-all');
+      const btnNewColorsExcludeAll = document.getElementById('btn-new-colors-exclude-all');
+      btnNewColorsIncludeAll.onclick = () => {
+        diffReport.unmatchedList.forEach(item => item.isIncluded = true);
+        renderNewColorsRows();
+      };
+      btnNewColorsExcludeAll.onclick = () => {
+        diffReport.unmatchedList.forEach(item => item.isIncluded = false);
+        renderNewColorsRows();
+      };
     } else {
       newColorsSection.style.display = 'none';
+    }
+
+    // 6. Render New Wheels Section
+    const newWheelsSection = document.getElementById('smart-import-new-wheels-section');
+    const newWheelsCount = document.getElementById('new-wheels-count');
+    const newWheelsContainer = document.getElementById('new-wheels-items-container');
+
+    function renderNewWheelsRows() {
+      newWheelsContainer.replaceChildren();
+      diffReport.newWheels.forEach((item, itemIdx) => {
+        const card = document.createElement('div');
+        card.className = 'new-color-card'; // Reuse style
+
+        const wheelName = item.parsed.name || 'pending';
+        const wheelId = item.parsed.id || 'No ID';
+
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-weight: 700; color: #f8fafc; font-size: 13px;">${escapeHTML(wheelName)}</span>
+              <span style="font-family: monospace; font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px;">ID: ${escapeHTML(wheelId)}</span>
+            </div>
+            <button type="button" class="btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}" style="font-size: 10px; padding: 4px 10px;">
+              ${item.isIncluded ? '✓ Included' : '+ Include Wheel'}
+            </button>
+          </div>
+
+          <div style="display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+            <div style="display: flex; align-items: center; gap: 20px; font-size: 11.5px;">
+              <span style="color: #94a3b8; font-weight: 600;">Target Models:</span>
+              <label class="checkbox-container" style="color: #f8fafc;">
+                <input type="radio" name="wheel-target-scope-${itemIdx}" value="all" ${item.targetScope === 'all' ? 'checked' : ''} class="new-wheel-scope-radio">
+                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
+                All Models (${modelsState.length})
+              </label>
+              <label class="checkbox-container" style="color: #f8fafc;">
+                <input type="radio" name="wheel-target-scope-${itemIdx}" value="specific" ${item.targetScope === 'specific' ? 'checked' : ''} class="new-wheel-scope-radio">
+                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
+                Select Specific Models
+              </label>
+            </div>
+
+            <div class="model-checkbox-grid" style="display: ${item.targetScope === 'specific' ? 'grid' : 'none'};">
+              ${modelsState.map((m, mIdx) => `
+                <label class="checkbox-container" style="font-size: 11px; color: #cbd5e1;">
+                  <input type="checkbox" value="${mIdx}" ${item.selectedModelIndices.includes(mIdx) ? 'checked' : ''} class="new-wheel-model-cb">
+                  <span class="checkbox-checkmark"></span>
+                  ${escapeHTML(m.model || 'Untitled Model')}
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        const toggleBtn = card.querySelector('button');
+        toggleBtn.addEventListener('click', () => {
+          item.isIncluded = !item.isIncluded;
+          renderNewWheelsRows();
+        });
+
+        const scopeRadios = card.querySelectorAll('.new-wheel-scope-radio');
+        scopeRadios.forEach(r => {
+          r.addEventListener('change', () => {
+            item.targetScope = r.value;
+            renderNewWheelsRows();
+          });
+        });
+
+        const modelCbs = card.querySelectorAll('.new-wheel-model-cb');
+        modelCbs.forEach(cb => {
+          cb.addEventListener('change', () => {
+            const mIdx = parseInt(cb.value, 10);
+            if (cb.checked) {
+              if (!item.selectedModelIndices.includes(mIdx)) item.selectedModelIndices.push(mIdx);
+            } else {
+              item.selectedModelIndices = item.selectedModelIndices.filter(i => i !== mIdx);
+            }
+          });
+        });
+
+        newWheelsContainer.appendChild(card);
+      });
+    }
+
+    if (diffReport.newWheels && diffReport.newWheels.length > 0) {
+      newWheelsSection.style.display = 'block';
+      newWheelsCount.textContent = diffReport.newWheels.length;
+      renderNewWheelsRows();
+
+      const btnNewWheelsIncludeAll = document.getElementById('btn-new-wheels-include-all');
+      const btnNewWheelsExcludeAll = document.getElementById('btn-new-wheels-exclude-all');
+      btnNewWheelsIncludeAll.onclick = () => {
+        diffReport.newWheels.forEach(item => item.isIncluded = true);
+        renderNewWheelsRows();
+      };
+      btnNewWheelsExcludeAll.onclick = () => {
+        diffReport.newWheels.forEach(item => item.isIncluded = false);
+        renderNewWheelsRows();
+      };
+    } else {
+      newWheelsSection.style.display = 'none';
     }
 
     // Show inline results area
@@ -1256,17 +1433,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 5. Apply New Wheels
-        if (report.newWheels.length > 0) {
-          modelsState.forEach(m => {
-            if (!m.wheelTypes) m.wheelTypes = [];
-            report.newWheels.forEach(w => {
-              const exists = m.wheelTypes.some(ew => ew && (ew.id === w.id || (ew.name && ew.name.toLowerCase() === w.name.toLowerCase())));
+        (report.newWheels || []).forEach(item => {
+          if (!item.isIncluded) return;
+
+          const newWheelObj = {
+            name: item.parsed.name || 'pending',
+            id: item.parsed.id || '',
+            thumbnail: "",
+            shortName: item.parsed.shortName || toShortName(item.parsed.name || item.parsed.id || 'wheel'),
+            costlabel: item.parsed.costlabel || ''
+          };
+
+          const targetModelIndices = item.targetScope === 'all'
+            ? modelsState.map((_, i) => i)
+            : item.selectedModelIndices;
+
+          targetModelIndices.forEach(mIdx => {
+            const m = modelsState[mIdx];
+            if (m) {
+              if (!m.wheelTypes) m.wheelTypes = [];
+              const exists = m.wheelTypes.some(ew => ew && (ew.id === newWheelObj.id || (ew.name && ew.name.toLowerCase() === newWheelObj.name.toLowerCase())));
               if (!exists) {
-                m.wheelTypes.push(JSON.parse(JSON.stringify(w)));
+                m.wheelTypes.push(JSON.parse(JSON.stringify(newWheelObj)));
               }
-            });
+            }
           });
-        }
+        });
 
         if (mSmartPaste) mSmartPaste.value = '';
         showAutofillStatus('Smart Auto-Populate & Data Sync completed successfully!', 'success');
@@ -1296,7 +1488,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const banner = document.getElementById('active-model-banner');
     if (banner) {
-      banner.style.display = activeModel ? 'flex' : 'none';
+      const activeTabPane = document.querySelector('.w-tab-pane.active');
+      const activeTabId = activeTabPane ? activeTabPane.id : '';
+      if (activeTabId === 'tabInit' || activeTabId === 'tabDataAutofill') {
+        banner.style.display = 'none';
+      } else {
+        banner.style.display = activeModel ? 'flex' : 'none';
+      }
     }
 
     document.querySelectorAll('.active-model-name-display').forEach(el => {
@@ -1672,7 +1870,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>`;
       btnEdit.addEventListener('click', () => {
         editingWheelIdx = wIdx;
-        wName.value = wheel.name;
+        wName.value = wheel.name === 'pending' ? '' : wheel.name;
         wId.value = wheel.id;
         wShort.value = wheel.shortName;
         
@@ -1923,8 +2121,8 @@ document.addEventListener('DOMContentLoaded', () => {
               addValidationItem(`[${modelLabel}] Wheel "${w.shortName}" is missing VDM Sales Code (ID).`, "warning");
               warningsCount++;
             }
-            if (!w.name || !w.name.trim()) {
-              addValidationItem(`[${modelLabel}] Wheel "${w.shortName || w.id}" is missing Wheel Description (Name).`, "warning");
+            if (!w.name || !w.name.trim() || w.name.trim().toLowerCase() === 'pending') {
+              addValidationItem(`[${modelLabel}] Wheel "${w.shortName || w.id}" is missing description (Display Name is "pending" / incomplete).`, "warning");
               warningsCount++;
             }
           });
@@ -2401,7 +2599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     if (activeModelIndex < 0 || activeModelIndex >= modelsState.length) return;
 
-    const name = wName.value.trim();
+    const name = wName.value.trim() || 'pending';
     const id = wId.value.trim().toUpperCase();
     const short = wShort.value.trim() || id.toLowerCase();
 

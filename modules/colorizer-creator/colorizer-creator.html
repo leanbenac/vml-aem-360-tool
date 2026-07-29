@@ -574,8 +574,8 @@
               <h3>Add Wheel Type</h3>
               <form id="add-wheel-form" class="color-form">
                 <div class="form-group">
-                  <label for="w-name" class="field-label">Wheel Description (Name):</label>
-                  <input type="text" id="w-name" placeholder="e.g. 19” Bright Machined Aluminum Wheels" required>
+                  <label for="w-name" class="field-label">Wheel Display Name:</label>
+                  <input type="text" id="w-name" placeholder="e.g. 19” Bright Machined Aluminum Wheels">
                 </div>
                 <div class="form-group">
                   <label for="w-id" class="field-label">
@@ -608,7 +608,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Wheel Description</th>
+                      <th>Wheel Display Name</th>
                       <th style="width: 120px;">VDM ID</th>
                       <th style="width: 120px;">Short Name</th>
                       <th style="width: 80px; text-align: center;">Actions</th>
@@ -774,8 +774,26 @@
 
                 <!-- Section 5: Add New / Unmatched Colors -->
                 <div id="smart-import-new-colors-section" class="smart-import-card" style="display: none; background: rgba(168, 85, 247, 0.04); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 16px;">
-                  <h5 style="margin: 0 0 12px 0; color: #c084fc; font-size: 12.5px; font-weight: 700;">New Unmatched Colors Found (<span id="new-colors-count">0</span>)</h5>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <h5 style="margin: 0; color: #c084fc; font-size: 12.5px; font-weight: 700;">New Unmatched Colors Found (<span id="new-colors-count">0</span>)</h5>
+                    <div style="display: flex; gap: 8px;">
+                      <button id="btn-new-colors-include-all" type="button" class="btn btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px;">Include All</button>
+                      <button id="btn-new-colors-exclude-all" type="button" class="btn btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px;">Exclude All</button>
+                    </div>
+                  </div>
                   <div id="new-colors-items-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                </div>
+
+                <!-- Section 6: Add New Wheels -->
+                <div id="smart-import-new-wheels-section" class="smart-import-card" style="display: none; background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 16px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <h5 style="margin: 0; color: #38bdf8; font-size: 12.5px; font-weight: 700;">New Wheels Found (<span id="new-wheels-count">0</span>)</h5>
+                    <div style="display: flex; gap: 8px;">
+                      <button id="btn-new-wheels-include-all" type="button" class="btn btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px;">Include All</button>
+                      <button id="btn-new-wheels-exclude-all" type="button" class="btn btn-sm btn-secondary" style="font-size: 10.5px; padding: 4px 10px;">Exclude All</button>
+                    </div>
+                  </div>
+                  <div id="new-wheels-items-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
                 </div>
               </div>
 
