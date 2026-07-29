@@ -2,9 +2,6 @@
 *.zip
 vml-content-tool-*.zip
 
-# Agent config
-.antigravityrules
-
 # OS files
 .DS_Store
 Thumbs.db
