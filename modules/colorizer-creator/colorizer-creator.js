@@ -1490,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (banner) {
       const activeTabPane = document.querySelector('.w-tab-pane.active');
       const activeTabId = activeTabPane ? activeTabPane.id : '';
-      if (activeTabId === 'tabInit' || activeTabId === 'tabDataAutofill') {
+      if (activeTabId === 'tabImport' || activeTabId === 'tabDataAutofill') {
         banner.style.display = 'none';
       } else {
         banner.style.display = activeModel ? 'flex' : 'none';
