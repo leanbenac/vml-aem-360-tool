@@ -855,14 +855,31 @@ document.addEventListener('DOMContentLoaded', () => {
       diffReport.autofillList.forEach(item => {
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px; padding: 8px 12px; font-size: 12px;';
-        row.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 18px; height: 18px; border-radius: 50%; background-color: ${escapeHTML(item.newHex)}; border: 1px solid rgba(255,255,255,0.3);"></div>
-            <span style="font-weight: 700; color: #f8fafc;">${escapeHTML(item.colorName)}</span>
-            <span style="font-family: monospace; font-size: 11px; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px;">${escapeHTML(item.newHex)}</span>
-          </div>
-          <span style="font-size: 10.5px; color: #94a3b8;">Models: ${escapeHTML(item.models.join(', '))}</span>
-        `;
+
+        const divLeft = document.createElement('div');
+        divLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+        const divSwatch = document.createElement('div');
+        divSwatch.style.cssText = `width: 18px; height: 18px; border-radius: 50%; background-color: ${item.newHex}; border: 1px solid rgba(255,255,255,0.3);`;
+
+        const spanName = document.createElement('span');
+        spanName.style.cssText = 'font-weight: 700; color: #f8fafc;';
+        spanName.textContent = item.colorName;
+
+        const spanHex = document.createElement('span');
+        spanHex.style.cssText = 'font-family: monospace; font-size: 11px; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px;';
+        spanHex.textContent = item.newHex;
+
+        divLeft.appendChild(divSwatch);
+        divLeft.appendChild(spanName);
+        divLeft.appendChild(spanHex);
+
+        const spanModels = document.createElement('span');
+        spanModels.style.cssText = 'font-size: 10.5px; color: #94a3b8;';
+        spanModels.textContent = `Models: ${item.models.join(', ')}`;
+
+        row.appendChild(divLeft);
+        row.appendChild(spanModels);
         autofillContainer.appendChild(row);
       });
     } else {
@@ -880,29 +897,97 @@ document.addEventListener('DOMContentLoaded', () => {
         diffReport.conflictList.forEach((item, idx) => {
           const row = document.createElement('div');
           row.className = 'conflict-item-row';
-          row.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-weight: 700; color: #f8fafc; font-size: 13px;">${escapeHTML(item.colorName)}</span>
-              <span style="font-size: 10.5px; color: #94a3b8;">(${escapeHTML(item.models.join(', '))})</span>
-            </div>
-            <div class="swatch-compare-group">
-              <div class="swatch-compare-box" style="border-color: rgba(148, 163, 184, 0.2);">
-                <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Current:</span>
-                <div style="width: 14px; height: 14px; border-radius: 50%; background-color: ${escapeHTML(item.currentHex)}; border: 1px solid rgba(255,255,255,0.3);"></div>
-                <span style="color: #cbd5e1;">${escapeHTML(item.currentHex)}</span>
-              </div>
-              <span style="color: #64748b; font-weight: 700;">➔</span>
-              <div class="swatch-compare-box" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1);">
-                <span style="font-size: 10px; color: #fbbf24; text-transform: uppercase;">New:</span>
-                <div style="width: 14px; height: 14px; border-radius: 50%; background-color: ${escapeHTML(item.newHex)}; border: 1px solid rgba(255,255,255,0.3);"></div>
-                <span style="color: #fbbf24; font-weight: 700;">${escapeHTML(item.newHex)}</span>
-              </div>
-              <div class="choice-btn-group">
-                <button type="button" class="choice-btn ${item.selectedChoice === 'keep' ? 'active-keep' : ''}" data-idx="${idx}" data-action="keep">Keep Current</button>
-                <button type="button" class="choice-btn ${item.selectedChoice === 'update' ? 'active-update' : ''}" data-idx="${idx}" data-action="update">Update to New</button>
-              </div>
-            </div>
-          `;
+
+          const divTitle = document.createElement('div');
+          divTitle.style.cssText = 'display: flex; align-items: center; gap: 12px;';
+
+          const spanName = document.createElement('span');
+          spanName.style.cssText = 'font-weight: 700; color: #f8fafc; font-size: 13px;';
+          spanName.textContent = item.colorName;
+
+          const spanModels = document.createElement('span');
+          spanModels.style.cssText = 'font-size: 10.5px; color: #94a3b8;';
+          spanModels.textContent = `(${item.models.join(', ')})`;
+
+          divTitle.appendChild(spanName);
+          divTitle.appendChild(spanModels);
+
+          const divCompare = document.createElement('div');
+          divCompare.className = 'swatch-compare-group';
+
+          // Current swatch box
+          const divCurrentBox = document.createElement('div');
+          divCurrentBox.className = 'swatch-compare-box';
+          divCurrentBox.style.borderColor = 'rgba(148, 163, 184, 0.2)';
+          
+          const spanCurrentLabel = document.createElement('span');
+          spanCurrentLabel.style.cssText = 'font-size: 10px; color: #94a3b8; text-transform: uppercase;';
+          spanCurrentLabel.textContent = 'Current:';
+
+          const divCurrentSwatch = document.createElement('div');
+          divCurrentSwatch.style.cssText = `width: 14px; height: 14px; border-radius: 50%; background-color: ${item.currentHex}; border: 1px solid rgba(255,255,255,0.3);`;
+
+          const spanCurrentHex = document.createElement('span');
+          spanCurrentHex.style.color = '#cbd5e1';
+          spanCurrentHex.textContent = item.currentHex;
+
+          divCurrentBox.appendChild(spanCurrentLabel);
+          divCurrentBox.appendChild(divCurrentSwatch);
+          divCurrentBox.appendChild(spanCurrentHex);
+
+          // Arrow
+          const spanArrow = document.createElement('span');
+          spanArrow.style.cssText = 'color: #64748b; font-weight: 700;';
+          spanArrow.textContent = '➔';
+
+          // New swatch box
+          const divNewBox = document.createElement('div');
+          divNewBox.className = 'swatch-compare-box';
+          divNewBox.style.cssText = 'border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1);';
+
+          const spanNewLabel = document.createElement('span');
+          spanNewLabel.style.cssText = 'font-size: 10px; color: #fbbf24; text-transform: uppercase;';
+          spanNewLabel.textContent = 'New:';
+
+          const divNewSwatch = document.createElement('div');
+          divNewSwatch.style.cssText = `width: 14px; height: 14px; border-radius: 50%; background-color: ${item.newHex}; border: 1px solid rgba(255,255,255,0.3);`;
+
+          const spanNewHex = document.createElement('span');
+          spanNewHex.style.cssText = 'color: #fbbf24; font-weight: 700;';
+          spanNewHex.textContent = item.newHex;
+
+          divNewBox.appendChild(spanNewLabel);
+          divNewBox.appendChild(divNewSwatch);
+          divNewBox.appendChild(spanNewHex);
+
+          // Buttons
+          const divBtns = document.createElement('div');
+          divBtns.className = 'choice-btn-group';
+
+          const btnKeep = document.createElement('button');
+          btnKeep.type = 'button';
+          btnKeep.className = `choice-btn ${item.selectedChoice === 'keep' ? 'active-keep' : ''}`;
+          btnKeep.dataset.idx = idx;
+          btnKeep.dataset.action = 'keep';
+          btnKeep.textContent = 'Keep Current';
+
+          const btnUpdate = document.createElement('button');
+          btnUpdate.type = 'button';
+          btnUpdate.className = `choice-btn ${item.selectedChoice === 'update' ? 'active-update' : ''}`;
+          btnUpdate.dataset.idx = idx;
+          btnUpdate.dataset.action = 'update';
+          btnUpdate.textContent = 'Update to New';
+
+          divBtns.appendChild(btnKeep);
+          divBtns.appendChild(btnUpdate);
+
+          divCompare.appendChild(divCurrentBox);
+          divCompare.appendChild(spanArrow);
+          divCompare.appendChild(divNewBox);
+          divCompare.appendChild(divBtns);
+
+          row.appendChild(divTitle);
+          row.appendChild(divCompare);
           conflictsContainer.appendChild(row);
         });
 
@@ -940,23 +1025,56 @@ document.addEventListener('DOMContentLoaded', () => {
       diffReport.updatedIdsList.forEach(item => {
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 8px 12px; font-size: 12px;';
-        row.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-weight: 700; color: #f8fafc;">${escapeHTML(item.colorName)}</span>
-            <span style="font-size: 11px; color: #94a3b8;">${item.currentId ? `(Current ID: ${escapeHTML(item.currentId)})` : '(No ID)'}</span>
-            <span style="color: #38bdf8; font-weight: 700;">➔ New Sales Code: ${escapeHTML(item.newId)}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 10.5px; color: #94a3b8;">Models: ${escapeHTML(item.models.join(', '))}</span>
-            <label class="checkbox-container" style="color: #38bdf8; font-size: 10px;">
-              <input type="checkbox" ${item.isIncluded ? 'checked' : ''} class="id-update-cb">
-              <span class="checkbox-checkmark"></span>
-              Update ID
-            </label>
-          </div>
-        `;
-        const cb = row.querySelector('.id-update-cb');
-        cb.addEventListener('change', () => { item.isIncluded = cb.checked; });
+
+        const divLeft = document.createElement('div');
+        divLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+        const spanName = document.createElement('span');
+        spanName.style.cssText = 'font-weight: 700; color: #f8fafc;';
+        spanName.textContent = item.colorName;
+
+        const spanCurrentId = document.createElement('span');
+        spanCurrentId.style.cssText = 'font-size: 11px; color: #94a3b8;';
+        spanCurrentId.textContent = item.currentId ? `(Current ID: ${item.currentId})` : '(No ID)';
+
+        const spanNewId = document.createElement('span');
+        spanNewId.style.cssText = 'color: #38bdf8; font-weight: 700;';
+        spanNewId.textContent = `➔ New Sales Code: ${item.newId}`;
+
+        divLeft.appendChild(spanName);
+        divLeft.appendChild(spanCurrentId);
+        divLeft.appendChild(spanNewId);
+
+        const divRight = document.createElement('div');
+        divRight.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+        const spanModels = document.createElement('span');
+        spanModels.style.cssText = 'font-size: 10.5px; color: #94a3b8;';
+        spanModels.textContent = `Models: ${item.models.join(', ')}`;
+
+        const labelCb = document.createElement('label');
+        labelCb.className = 'checkbox-container';
+        labelCb.style.cssText = 'color: #38bdf8; font-size: 10px;';
+
+        const inputCb = document.createElement('input');
+        inputCb.type = 'checkbox';
+        inputCb.className = 'id-update-cb';
+        inputCb.checked = !!item.isIncluded;
+
+        const spanCheckmark = document.createElement('span');
+        spanCheckmark.className = 'checkbox-checkmark';
+
+        labelCb.appendChild(inputCb);
+        labelCb.appendChild(spanCheckmark);
+        labelCb.appendChild(document.createTextNode('Update ID'));
+
+        divRight.appendChild(spanModels);
+        divRight.appendChild(labelCb);
+
+        row.appendChild(divLeft);
+        row.appendChild(divRight);
+
+        inputCb.addEventListener('change', () => { item.isIncluded = inputCb.checked; });
         idUpdatesContainer.appendChild(row);
       });
     } else {
@@ -972,23 +1090,56 @@ document.addEventListener('DOMContentLoaded', () => {
       diffReport.wheelUpdatesList.forEach(item => {
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 6px; padding: 8px 12px; font-size: 12px;';
-        row.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-weight: 700; color: #f472b6; font-family: var(--font-mono);">${escapeHTML(item.wheelId)}</span>
-            <span style="font-size: 11px; color: #94a3b8;">${escapeHTML(item.currentName)}</span>
-            <span style="color: #f472b6; font-weight: 700;">➔ ${escapeHTML(item.newName)}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 10.5px; color: #94a3b8;">Models: ${escapeHTML(item.models.join(', '))}</span>
-            <label class="checkbox-container" style="color: #f472b6; font-size: 10px;">
-              <input type="checkbox" ${item.isIncluded ? 'checked' : ''} class="wheel-update-cb">
-              <span class="checkbox-checkmark"></span>
-              Update Name
-            </label>
-          </div>
-        `;
-        const cb = row.querySelector('.wheel-update-cb');
-        cb.addEventListener('change', () => { item.isIncluded = cb.checked; });
+
+        const divLeft = document.createElement('div');
+        divLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+        const spanId = document.createElement('span');
+        spanId.style.cssText = 'font-weight: 700; color: #f472b6; font-family: var(--font-mono);';
+        spanId.textContent = item.wheelId;
+
+        const spanCurrentName = document.createElement('span');
+        spanCurrentName.style.cssText = 'font-size: 11px; color: #94a3b8;';
+        spanCurrentName.textContent = item.currentName;
+
+        const spanNewName = document.createElement('span');
+        spanNewName.style.cssText = 'color: #f472b6; font-weight: 700;';
+        spanNewName.textContent = `➔ ${item.newName}`;
+
+        divLeft.appendChild(spanId);
+        divLeft.appendChild(spanCurrentName);
+        divLeft.appendChild(spanNewName);
+
+        const divRight = document.createElement('div');
+        divRight.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+        const spanModels = document.createElement('span');
+        spanModels.style.cssText = 'font-size: 10.5px; color: #94a3b8;';
+        spanModels.textContent = `Models: ${item.models.join(', ')}`;
+
+        const labelCb = document.createElement('label');
+        labelCb.className = 'checkbox-container';
+        labelCb.style.cssText = 'color: #f472b6; font-size: 10px;';
+
+        const inputCb = document.createElement('input');
+        inputCb.type = 'checkbox';
+        inputCb.className = 'wheel-update-cb';
+        inputCb.checked = !!item.isIncluded;
+
+        const spanCheckmark = document.createElement('span');
+        spanCheckmark.className = 'checkbox-checkmark';
+
+        labelCb.appendChild(inputCb);
+        labelCb.appendChild(spanCheckmark);
+        labelCb.appendChild(document.createTextNode('Update Name'));
+
+        divRight.appendChild(spanModels);
+        divRight.appendChild(labelCb);
+
+        row.appendChild(divLeft);
+        row.appendChild(divRight);
+
+        inputCb.addEventListener('change', () => { item.isIncluded = inputCb.checked; });
         wheelUpdatesContainer.appendChild(row);
       });
     } else {
@@ -1005,59 +1156,171 @@ document.addEventListener('DOMContentLoaded', () => {
         const colorHex = item.parsed.hexcode || '#7e22ce';
         const colorName = item.parsed.name;
 
-        card.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 20px; height: 20px; border-radius: 50%; background-color: ${escapeHTML(colorHex)}; border: 1.5px solid rgba(255,255,255,0.4); box-shadow: 0 2px 4px rgba(0,0,0,0.4);"></div>
-              <strong style="color: #f8fafc; font-size: 13px;">${escapeHTML(colorName)}</strong>
-              ${colorHex ? `<span style="font-family: monospace; font-size: 11px; color: #a7f3d0; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px;">${escapeHTML(colorHex)}</span>` : '<span style="font-size: 10px; color: #fbbf24;">(No Hex)</span>'}
-              ${item.parsed.costlabel ? `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">${escapeHTML(item.parsed.costlabel)}</span>` : ''}
-            </div>
-            <button type="button" class="btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}" style="font-size: 10px; padding: 4px 10px;">
-              ${item.isIncluded ? '✓ Included' : '+ Include Color'}
-            </button>
-          </div>
+        // Header div
+        const divHeader = document.createElement('div');
+        divHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;';
 
-          <div style="display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
-            <div style="display: flex; align-items: center; gap: 20px; font-size: 11.5px;">
-              <span style="color: #94a3b8; font-weight: 600;">Color Category:</span>
-              <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="color-type-${itemIdx}" value="exterior" ${item.typeChoice === 'exterior' ? 'checked' : ''} class="new-color-type-radio">
-                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
-                Exterior Color
-              </label>
-              <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="color-type-${itemIdx}" value="interior" ${item.typeChoice === 'interior' ? 'checked' : ''} class="new-color-type-radio">
-                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
-                Interior Color
-              </label>
-            </div>
+        const divHeaderLeft = document.createElement('div');
+        divHeaderLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
 
-            <div style="display: flex; align-items: center; gap: 20px; font-size: 11.5px;">
-              <span style="color: #94a3b8; font-weight: 600;">Target Models:</span>
-              <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="model-target-scope-${itemIdx}" value="all" ${item.targetScope === 'all' ? 'checked' : ''} class="new-color-scope-radio">
-                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
-                All Models (${modelsState.length})
-              </label>
-              <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="model-target-scope-${itemIdx}" value="specific" ${item.targetScope === 'specific' ? 'checked' : ''} class="new-color-scope-radio">
-                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
-                Select Specific Models
-              </label>
-            </div>
+        const divSwatch = document.createElement('div');
+        divSwatch.style.cssText = `width: 20px; height: 20px; border-radius: 50%; background-color: ${colorHex}; border: 1.5px solid rgba(255,255,255,0.4); box-shadow: 0 2px 4px rgba(0,0,0,0.4);`;
 
-            <div class="model-checkbox-grid" style="display: ${item.targetScope === 'specific' ? 'grid' : 'none'};">
-              ${modelsState.map((m, mIdx) => `
-                <label class="checkbox-container" style="font-size: 11px; color: #cbd5e1;">
-                  <input type="checkbox" value="${mIdx}" ${item.selectedModelIndices.includes(mIdx) ? 'checked' : ''} class="new-color-model-cb">
-                  <span class="checkbox-checkmark"></span>
-                  ${escapeHTML(m.model || 'Untitled Model')}
-                </label>
-              `).join('')}
-            </div>
-          </div>
-        `;
+        const strongName = document.createElement('strong');
+        strongName.style.cssText = 'color: #f8fafc; font-size: 13px;';
+        strongName.textContent = colorName;
+
+        divHeaderLeft.appendChild(divSwatch);
+        divHeaderLeft.appendChild(strongName);
+
+        if (colorHex) {
+          const spanHex = document.createElement('span');
+          spanHex.style.cssText = 'font-family: monospace; font-size: 11px; color: #a7f3d0; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px;';
+          spanHex.textContent = colorHex;
+          divHeaderLeft.appendChild(spanHex);
+        } else {
+          const spanNoHex = document.createElement('span');
+          spanNoHex.style.cssText = 'font-size: 10px; color: #fbbf24;';
+          spanNoHex.textContent = '(No Hex)';
+          divHeaderLeft.appendChild(spanNoHex);
+        }
+
+        if (item.parsed.costlabel) {
+          const spanCost = document.createElement('span');
+          spanCost.className = 'badge';
+          spanCost.style.cssText = 'background: rgba(245, 158, 11, 0.15); color: #fbbf24;';
+          spanCost.textContent = item.parsed.costlabel;
+          divHeaderLeft.appendChild(spanCost);
+        }
+
+        const btnInclude = document.createElement('button');
+        btnInclude.type = 'button';
+        btnInclude.className = `btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}`;
+        btnInclude.style.cssText = 'font-size: 10px; padding: 4px 10px;';
+        btnInclude.textContent = item.isIncluded ? '✓ Included' : '+ Include Color';
+
+        divHeader.appendChild(divHeaderLeft);
+        divHeader.appendChild(btnInclude);
+
+        // Body div (collapsible)
+        const divBody = document.createElement('div');
+        divBody.style.cssText = `display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;`;
+
+        // Category Row
+        const divCategory = document.createElement('div');
+        divCategory.style.cssText = 'display: flex; align-items: center; gap: 20px; font-size: 11.5px;';
+        const spanCategoryLabel = document.createElement('span');
+        spanCategoryLabel.style.cssText = 'color: #94a3b8; font-weight: 600;';
+        spanCategoryLabel.textContent = 'Color Category:';
+        divCategory.appendChild(spanCategoryLabel);
+
+        const labelExt = document.createElement('label');
+        labelExt.className = 'checkbox-container';
+        labelExt.style.color = '#f8fafc';
+        const inputExt = document.createElement('input');
+        inputExt.type = 'radio';
+        inputExt.name = `color-type-${itemIdx}`;
+        inputExt.value = 'exterior';
+        inputExt.className = 'new-color-type-radio';
+        inputExt.checked = item.typeChoice === 'exterior';
+        const spanCheckmarkExt = document.createElement('span');
+        spanCheckmarkExt.className = 'checkbox-checkmark';
+        spanCheckmarkExt.style.borderRadius = '50%';
+        labelExt.appendChild(inputExt);
+        labelExt.appendChild(spanCheckmarkExt);
+        labelExt.appendChild(document.createTextNode('Exterior Color'));
+        divCategory.appendChild(labelExt);
+
+        const labelInt = document.createElement('label');
+        labelInt.className = 'checkbox-container';
+        labelInt.style.color = '#f8fafc';
+        const inputInt = document.createElement('input');
+        inputInt.type = 'radio';
+        inputInt.name = `color-type-${itemIdx}`;
+        inputInt.value = 'interior';
+        inputInt.className = 'new-color-type-radio';
+        inputInt.checked = item.typeChoice === 'interior';
+        const spanCheckmarkInt = document.createElement('span');
+        spanCheckmarkInt.className = 'checkbox-checkmark';
+        spanCheckmarkInt.style.borderRadius = '50%';
+        labelInt.appendChild(inputInt);
+        labelInt.appendChild(spanCheckmarkInt);
+        labelInt.appendChild(document.createTextNode('Interior Color'));
+        divCategory.appendChild(labelInt);
+
+        // Scope Row
+        const divScope = document.createElement('div');
+        divScope.style.cssText = 'display: flex; align-items: center; gap: 20px; font-size: 11.5px;';
+        const spanScopeLabel = document.createElement('span');
+        spanScopeLabel.style.cssText = 'color: #94a3b8; font-weight: 600;';
+        spanScopeLabel.textContent = 'Target Models:';
+        divScope.appendChild(spanScopeLabel);
+
+        const labelScopeAll = document.createElement('label');
+        labelScopeAll.className = 'checkbox-container';
+        labelScopeAll.style.color = '#f8fafc';
+        const inputScopeAll = document.createElement('input');
+        inputScopeAll.type = 'radio';
+        inputScopeAll.name = `model-target-scope-${itemIdx}`;
+        inputScopeAll.value = 'all';
+        inputScopeAll.className = 'new-color-scope-radio';
+        inputScopeAll.checked = item.targetScope === 'all';
+        const spanCheckmarkScopeAll = document.createElement('span');
+        spanCheckmarkScopeAll.className = 'checkbox-checkmark';
+        spanCheckmarkScopeAll.style.borderRadius = '50%';
+        labelScopeAll.appendChild(inputScopeAll);
+        labelScopeAll.appendChild(spanCheckmarkScopeAll);
+        labelScopeAll.appendChild(document.createTextNode(`All Models (${modelsState.length})`));
+        divScope.appendChild(labelScopeAll);
+
+        const labelScopeSpecific = document.createElement('label');
+        labelScopeSpecific.className = 'checkbox-container';
+        labelScopeSpecific.style.color = '#f8fafc';
+        const inputScopeSpecific = document.createElement('input');
+        inputScopeSpecific.type = 'radio';
+        inputScopeSpecific.name = `model-target-scope-${itemIdx}`;
+        inputScopeSpecific.value = 'specific';
+        inputScopeSpecific.className = 'new-color-scope-radio';
+        inputScopeSpecific.checked = item.targetScope === 'specific';
+        const spanCheckmarkScopeSpecific = document.createElement('span');
+        spanCheckmarkScopeSpecific.className = 'checkbox-checkmark';
+        spanCheckmarkScopeSpecific.style.borderRadius = '50%';
+        labelScopeSpecific.appendChild(inputScopeSpecific);
+        labelScopeSpecific.appendChild(spanCheckmarkScopeSpecific);
+        labelScopeSpecific.appendChild(document.createTextNode('Select Specific Models'));
+        divScope.appendChild(labelScopeSpecific);
+
+        // Checkbox Grid
+        const divGrid = document.createElement('div');
+        divGrid.className = 'model-checkbox-grid';
+        divGrid.style.display = item.targetScope === 'specific' ? 'grid' : 'none';
+
+        modelsState.forEach((m, mIdx) => {
+          const labelModel = document.createElement('label');
+          labelModel.className = 'checkbox-container';
+          labelModel.style.cssText = 'font-size: 11px; color: #cbd5e1;';
+          
+          const inputModel = document.createElement('input');
+          inputModel.type = 'checkbox';
+          inputModel.value = mIdx;
+          inputModel.className = 'new-color-model-cb';
+          inputModel.checked = item.selectedModelIndices.includes(mIdx);
+
+          const spanModelCheck = document.createElement('span');
+          spanModelCheck.className = 'checkbox-checkmark';
+
+          labelModel.appendChild(inputModel);
+          labelModel.appendChild(spanModelCheck);
+          labelModel.appendChild(document.createTextNode(m.model || 'Untitled Model'));
+          divGrid.appendChild(labelModel);
+        });
+
+        divBody.appendChild(divCategory);
+        divBody.appendChild(divScope);
+        divBody.appendChild(divGrid);
+
+        card.appendChild(divHeader);
+        card.appendChild(divBody);
 
         const toggleBtn = card.querySelector('button');
         toggleBtn.addEventListener('click', () => {
@@ -1127,43 +1390,109 @@ document.addEventListener('DOMContentLoaded', () => {
         const wheelName = item.parsed.name || 'pending';
         const wheelId = item.parsed.id || 'No ID';
 
-        card.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-weight: 700; color: #f8fafc; font-size: 13px;">${escapeHTML(wheelName)}</span>
-              <span style="font-family: monospace; font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px;">ID: ${escapeHTML(wheelId)}</span>
-            </div>
-            <button type="button" class="btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}" style="font-size: 10px; padding: 4px 10px;">
-              ${item.isIncluded ? '✓ Included' : '+ Include Wheel'}
-            </button>
-          </div>
+        // Header div
+        const divHeader = document.createElement('div');
+        divHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;';
 
-          <div style="display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
-            <div style="display: flex; align-items: center; gap: 20px; font-size: 11.5px;">
-              <span style="color: #94a3b8; font-weight: 600;">Target Models:</span>
-              <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="wheel-target-scope-${itemIdx}" value="all" ${item.targetScope === 'all' ? 'checked' : ''} class="new-wheel-scope-radio">
-                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
-                All Models (${modelsState.length})
-              </label>
-              <label class="checkbox-container" style="color: #f8fafc;">
-                <input type="radio" name="wheel-target-scope-${itemIdx}" value="specific" ${item.targetScope === 'specific' ? 'checked' : ''} class="new-wheel-scope-radio">
-                <span class="checkbox-checkmark" style="border-radius: 50%;"></span>
-                Select Specific Models
-              </label>
-            </div>
+        const divHeaderLeft = document.createElement('div');
+        divHeaderLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
 
-            <div class="model-checkbox-grid" style="display: ${item.targetScope === 'specific' ? 'grid' : 'none'};">
-              ${modelsState.map((m, mIdx) => `
-                <label class="checkbox-container" style="font-size: 11px; color: #cbd5e1;">
-                  <input type="checkbox" value="${mIdx}" ${item.selectedModelIndices.includes(mIdx) ? 'checked' : ''} class="new-wheel-model-cb">
-                  <span class="checkbox-checkmark"></span>
-                  ${escapeHTML(m.model || 'Untitled Model')}
-                </label>
-              `).join('')}
-            </div>
-          </div>
-        `;
+        const spanName = document.createElement('span');
+        spanName.style.cssText = 'font-weight: 700; color: #f8fafc; font-size: 13px;';
+        spanName.textContent = wheelName;
+
+        const spanId = document.createElement('span');
+        spanId.style.cssText = 'font-family: monospace; font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px;';
+        spanId.textContent = `ID: ${wheelId}`;
+
+        divHeaderLeft.appendChild(spanName);
+        divHeaderLeft.appendChild(spanId);
+
+        const btnInclude = document.createElement('button');
+        btnInclude.type = 'button';
+        btnInclude.className = `btn btn-sm ${item.isIncluded ? 'btn-secondary' : 'btn-primary'}`;
+        btnInclude.style.cssText = 'font-size: 10px; padding: 4px 10px;';
+        btnInclude.textContent = item.isIncluded ? '✓ Included' : '+ Include Wheel';
+
+        divHeader.appendChild(divHeaderLeft);
+        divHeader.appendChild(btnInclude);
+
+        // Body div (collapsible)
+        const divBody = document.createElement('div');
+        divBody.style.cssText = `display: ${item.isIncluded ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;`;
+
+        // Scope Row
+        const divScope = document.createElement('div');
+        divScope.style.cssText = 'display: flex; align-items: center; gap: 20px; font-size: 11.5px;';
+        const spanScopeLabel = document.createElement('span');
+        spanScopeLabel.style.cssText = 'color: #94a3b8; font-weight: 600;';
+        spanScopeLabel.textContent = 'Target Models:';
+        divScope.appendChild(spanScopeLabel);
+
+        const labelScopeAll = document.createElement('label');
+        labelScopeAll.className = 'checkbox-container';
+        labelScopeAll.style.color = '#f8fafc';
+        const inputScopeAll = document.createElement('input');
+        inputScopeAll.type = 'radio';
+        inputScopeAll.name = `wheel-target-scope-${itemIdx}`;
+        inputScopeAll.value = 'all';
+        inputScopeAll.className = 'new-wheel-scope-radio';
+        inputScopeAll.checked = item.targetScope === 'all';
+        const spanCheckmarkScopeAll = document.createElement('span');
+        spanCheckmarkScopeAll.className = 'checkbox-checkmark';
+        spanCheckmarkScopeAll.style.borderRadius = '50%';
+        labelScopeAll.appendChild(inputScopeAll);
+        labelScopeAll.appendChild(spanCheckmarkScopeAll);
+        labelScopeAll.appendChild(document.createTextNode(`All Models (${modelsState.length})`));
+        divScope.appendChild(labelScopeAll);
+
+        const labelScopeSpecific = document.createElement('label');
+        labelScopeSpecific.className = 'checkbox-container';
+        labelScopeSpecific.style.color = '#f8fafc';
+        const inputScopeSpecific = document.createElement('input');
+        inputScopeSpecific.type = 'radio';
+        inputScopeSpecific.name = `wheel-target-scope-${itemIdx}`;
+        inputScopeSpecific.value = 'specific';
+        inputScopeSpecific.className = 'new-wheel-scope-radio';
+        inputScopeSpecific.checked = item.targetScope === 'specific';
+        const spanCheckmarkScopeSpecific = document.createElement('span');
+        spanCheckmarkScopeSpecific.className = 'checkbox-checkmark';
+        spanCheckmarkScopeSpecific.style.borderRadius = '50%';
+        labelScopeSpecific.appendChild(inputScopeSpecific);
+        labelScopeSpecific.appendChild(spanCheckmarkScopeSpecific);
+        labelScopeSpecific.appendChild(document.createTextNode('Select Specific Models'));
+        divScope.appendChild(labelScopeSpecific);
+
+        // Checkbox Grid
+        const divGrid = document.createElement('div');
+        divGrid.className = 'model-checkbox-grid';
+        divGrid.style.display = item.targetScope === 'specific' ? 'grid' : 'none';
+
+        modelsState.forEach((m, mIdx) => {
+          const labelModel = document.createElement('label');
+          labelModel.className = 'checkbox-container';
+          labelModel.style.cssText = 'font-size: 11px; color: #cbd5e1;';
+          
+          const inputModel = document.createElement('input');
+          inputModel.type = 'checkbox';
+          inputModel.value = mIdx;
+          inputModel.className = 'new-wheel-model-cb';
+          inputModel.checked = item.selectedModelIndices.includes(mIdx);
+
+          const spanModelCheck = document.createElement('span');
+          spanModelCheck.className = 'checkbox-checkmark';
+
+          labelModel.appendChild(inputModel);
+          labelModel.appendChild(spanModelCheck);
+          labelModel.appendChild(document.createTextNode(m.model || 'Untitled Model'));
+          divGrid.appendChild(labelModel);
+        });
+
+        divBody.appendChild(divScope);
+        divBody.appendChild(divGrid);
+
+        card.appendChild(divHeader);
+        card.appendChild(divBody);
 
         const toggleBtn = card.querySelector('button');
         toggleBtn.addEventListener('click', () => {
@@ -1555,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const unassignedBadge = document.createElement('span');
       unassignedBadge.style.cssText = 'font-size: 10px; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px dashed rgba(245, 158, 11, 0.4); padding: 2px 8px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;';
-      unassignedBadge.innerHTML = '⚠️ Hex Missing — Click to Set 🎨';
+      unassignedBadge.textContent = '⚠️ Hex Missing — Click to Set 🎨';
 
       container.appendChild(pickerInput);
       container.appendChild(swatch);
@@ -1588,14 +1917,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = 'catalog-pill';
-        const swatchStyle = (color.hexcode && color.hexcode.trim())
-          ? `background-color: ${escapeHTML(color.hexcode)};`
-          : `border: 1px dashed #f59e0b; background: repeating-linear-gradient(45deg, rgba(245,158,11,0.3), rgba(245,158,11,0.3) 2px, transparent 2px, transparent 4px);`;
+        const swatchDiv = document.createElement('div');
+        swatchDiv.className = 'catalog-pill-swatch';
+        if (color.hexcode && color.hexcode.trim()) {
+          swatchDiv.style.backgroundColor = color.hexcode;
+        } else {
+          swatchDiv.style.border = '1px dashed #f59e0b';
+          swatchDiv.style.background = 'repeating-linear-gradient(45deg, rgba(245,158,11,0.3), rgba(245,158,11,0.3) 2px, transparent 2px, transparent 4px)';
+        }
 
-        pill.innerHTML = `
-          <div class="catalog-pill-swatch" style="${swatchStyle}"></div>
-          <span>${escapeHTML(color.name)} (${escapeHTML(color.id)})</span>
-        `;
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `${color.name} (${color.id})`;
+
+        pill.appendChild(swatchDiv);
+        pill.appendChild(nameSpan);
         pill.addEventListener('click', () => {
           ecName.value = color.name;
           ecId.value = color.id;
@@ -1632,14 +1967,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const pill = document.createElement('button');
         pill.type = 'button';
         pill.className = 'catalog-pill';
-        const swatchStyle = (color.hexcode && color.hexcode.trim())
-          ? `background-color: ${escapeHTML(color.hexcode)};`
-          : `border: 1px dashed #f59e0b; background: repeating-linear-gradient(45deg, rgba(245,158,11,0.3), rgba(245,158,11,0.3) 2px, transparent 2px, transparent 4px);`;
+        const swatchDiv = document.createElement('div');
+        swatchDiv.className = 'catalog-pill-swatch';
+        if (color.hexcode && color.hexcode.trim()) {
+          swatchDiv.style.backgroundColor = color.hexcode;
+        } else {
+          swatchDiv.style.border = '1px dashed #f59e0b';
+          swatchDiv.style.background = 'repeating-linear-gradient(45deg, rgba(245,158,11,0.3), rgba(245,158,11,0.3) 2px, transparent 2px, transparent 4px)';
+        }
 
-        pill.innerHTML = `
-          <div class="catalog-pill-swatch" style="${swatchStyle}"></div>
-          <span>${escapeHTML(color.name)} (${escapeHTML(color.id)})</span>
-        `;
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `${color.name} (${color.id})`;
+
+        pill.appendChild(swatchDiv);
+        pill.appendChild(nameSpan);
         pill.addEventListener('click', () => {
           icName.value = color.name;
           icId.value = color.id;
@@ -1744,7 +2085,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (extColors.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="5" style="text-align: center; color: var(--text-muted); font-style: italic;">No exterior colors added yet.</td>`;
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.style.textAlign = 'center';
+      td.style.color = 'var(--text-muted)';
+      td.style.fontStyle = 'italic';
+      td.textContent = 'No exterior colors added yet.';
+      tr.appendChild(td);
       extColorListRows.appendChild(tr);
       return;
     }
@@ -1762,10 +2109,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const tdName = document.createElement('td');
       tdName.className = 'cell-color-name';
-      tdName.innerHTML = `
-        <strong>${escapeHTML(color.name)}</strong>
-        <span class="cell-short-name">${escapeHTML(color.shortName)}</span>
-      `;
+      const strongName = document.createElement('strong');
+      strongName.textContent = color.name;
+      const spanShortName = document.createElement('span');
+      spanShortName.className = 'cell-short-name';
+      spanShortName.textContent = color.shortName;
+      tdName.appendChild(strongName);
+      tdName.appendChild(spanShortName);
       
       const tdId = document.createElement('td');
       tdId.textContent = color.id;
@@ -1842,7 +2192,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wheels.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="4" style="text-align: center; color: var(--text-muted); font-style: italic;">No wheel types added yet.</td>`;
+      const td = document.createElement('td');
+      td.colSpan = 4;
+      td.style.textAlign = 'center';
+      td.style.color = 'var(--text-muted)';
+      td.style.fontStyle = 'italic';
+      td.textContent = 'No wheel types added yet.';
+      tr.appendChild(td);
       wheelListRows.appendChild(tr);
       return;
     }
@@ -1851,7 +2207,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
 
       const tdName = document.createElement('td');
-      tdName.innerHTML = `<strong>${escapeHTML(wheel.name)}</strong>`;
+      const strongName = document.createElement('strong');
+      strongName.textContent = wheel.name;
+      tdName.appendChild(strongName);
 
       const tdId = document.createElement('td');
       tdId.textContent = wheel.id;
@@ -1921,7 +2279,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (intColors.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="6" style="text-align: center; color: var(--text-muted); font-style: italic;">No interior colors added yet.</td>`;
+      const td = document.createElement('td');
+      td.colSpan = 6;
+      td.style.textAlign = 'center';
+      td.style.color = 'var(--text-muted)';
+      td.style.fontStyle = 'italic';
+      td.textContent = 'No interior colors added yet.';
+      tr.appendChild(td);
       intColorListRows.appendChild(tr);
       return;
     }
@@ -1939,10 +2303,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const tdName = document.createElement('td');
       tdName.className = 'cell-color-name';
-      tdName.innerHTML = `
-        <strong>${escapeHTML(color.name)}</strong>
-        <span class="cell-short-name">${escapeHTML(color.shortName)}</span>
-      `;
+      const strongName = document.createElement('strong');
+      strongName.textContent = color.name;
+      const spanShortName = document.createElement('span');
+      spanShortName.className = 'cell-short-name';
+      spanShortName.textContent = color.shortName;
+      tdName.appendChild(strongName);
+      tdName.appendChild(spanShortName);
 
       const tdId = document.createElement('td');
       tdId.textContent = color.id;
@@ -2428,7 +2795,10 @@ document.addEventListener('DOMContentLoaded', () => {
       affectedModels.forEach(m => {
         const tag = document.createElement('span');
         tag.style.cssText = 'background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.35); color: #e9d5ff; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;';
-        tag.innerHTML = `<span style="width: 6px; height: 6px; background: #c084fc; border-radius: 50%;"></span>${escapeHTML(m)}`;
+        const dot = document.createElement('span');
+        dot.style.cssText = 'width: 6px; height: 6px; background: #c084fc; border-radius: 50%;';
+        tag.appendChild(dot);
+        tag.appendChild(document.createTextNode(m));
         modelsEl.appendChild(tag);
       });
     }
