@@ -16,21 +16,29 @@ Welcome to the **VML AEM 360 Tool** repository. This file serves as the definiti
 The extension follows a **strict modular structure**. Keep popup UI handlers separate from page execution scripts.
 
 ```text
-vml-paths-manager-tool/
+vml-aem-360-tool/
 ├── manifest.json                  # Extension configuration (Manifest V3)
+├── pack.ps1                       # PowerShell packaging script
 ├── assets/
 │   └── logo-vml.png               # Branding assets
 ├── core/
 │   ├── content.css                # Injected CSS styles
 │   ├── popup.css                  # UI styles (premium dark mode theme)
-│   ├── popup.html                 # Main popup UI (clean path finder layout)
+│   ├── popup.html                 # Main popup UI (clean layout)
 │   └── popup-ui.js                # Core UI helper (handles versioning and tooltips)
-├── modules/
-│   └── asset-injector/            # Core module for mass uploads
-│       ├── content-asset-injector.js
-│       └── popup-asset-injector.js
-├── .antigravityrules              # AI Agent System Instructions (This file)
-└── Readme.md                      # End-user documentation
+├── json-examples/                 # Configuration JSON examples
+├── test/                          # Unit testing suite
+│   └── content-asset-renamer.test.js
+└── modules/
+    ├── asset-injector/            # Module for mass uploads
+    │   ├── content-asset-injector.js
+    │   ├── content-asset-renamer.js
+    │   └── popup-asset-injector.js
+    └── colorizer-creator/         # Module to manage exterior/interior colors & wheels
+        ├── colorizer-creator.css
+        ├── colorizer-creator.html
+        ├── colorizer-creator.js
+        └── popup-colorizer-creator.js
 ```
 
 ---
@@ -42,6 +50,11 @@ vml-paths-manager-tool/
 * **Action:** `popup-asset-injector.js` handles the drag-and-drop events and UI state.
 * **Execution:** `content-asset-injector.js` processes the files, manages the CSRF tokens, creates folders recursively (`sling:OrderedFolder`), and executes direct binary uploads via AEM's Initiate/Complete upload flow.
 * **Result:** Replicates the local folder structure inside AEM, uploads all files concurrently, and automatically sets `dam:status=approved` upon completion.
+
+### 2. Colorizer Creator
+* **Trigger:** User opens the colorizer creator page (embedded in popup) to import/create vehicle colors and wheel configs.
+* **Action:** `colorizer-creator.js` handles interactive catalog rendering, JSON configuration parsing, comparison diff state, and custom validations.
+* **Result:** Exports a standardized JSON manifest of exterior/interior colors and wheel configurations matching AEM requirements.
 
 ---
 

@@ -15,19 +15,29 @@ This file defines the technical guidelines, code style, security constraints, an
 ### Folder Structure
 
 ```text
-vml-paths-manager-tool/
+vml-aem-360-tool/
 ├── manifest.json                  # Extension configuration (Manifest V3)
+├── pack.ps1                       # PowerShell zip script for packaging/distribution
 ├── assets/
 │   └── logo-vml.png               # Branding assets
 ├── core/
 │   ├── content.css                # Injected CSS styles
 │   ├── popup.css                  # UI styles (premium dark mode theme)
-│   ├── popup.html                 # Main popup UI (clean path finder layout)
+│   ├── popup.html                 # Main popup UI (clean layout)
 │   └── popup-ui.js                # Core UI helper (handles versioning and tooltips)
+├── json-examples/                 # Configuration JSON examples
+├── test/                          # Unit testing suite
+│   └── content-asset-renamer.test.js
 └── modules/
-    └── asset-injector/            # Core module for mass uploads
-        ├── content-asset-injector.js
-        └── popup-asset-injector.js
+    ├── asset-injector/            # Module for mass uploads
+    │   ├── content-asset-injector.js
+    │   ├── content-asset-renamer.js
+    │   └── popup-asset-injector.js
+    └── colorizer-creator/         # Module to manage exterior/interior colors & wheels
+        ├── colorizer-creator.css
+        ├── colorizer-creator.html
+        ├── colorizer-creator.js
+        └── popup-colorizer-creator.js
 ```
 
 ---
