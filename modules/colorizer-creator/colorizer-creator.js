@@ -121,6 +121,101 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── HELPER FUNCTIONS ──────────────────────────────────────────────────
 
+  // Programmatic SVG Icon Creators to prevent DOM XSS (no innerHTML)
+  function createEditIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    
+    const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path1.setAttribute('d', 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7');
+    svg.appendChild(path1);
+    
+    const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path2.setAttribute('d', 'M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z');
+    svg.appendChild(path2);
+    
+    return svg;
+  }
+
+  function createDeleteIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    
+    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    polyline.setAttribute('points', '3 6 5 6 21 6');
+    svg.appendChild(polyline);
+    
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2');
+    svg.appendChild(path);
+    
+    const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line1.setAttribute('x1', '10');
+    line1.setAttribute('y1', '11');
+    line1.setAttribute('x2', '10');
+    line1.setAttribute('y2', '17');
+    svg.appendChild(line1);
+    
+    const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line2.setAttribute('x1', '14');
+    line2.setAttribute('y1', '11');
+    line2.setAttribute('x2', '14');
+    line2.setAttribute('y2', '17');
+    svg.appendChild(line2);
+    
+    return svg;
+  }
+
+  function createCopyIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'copy-icon');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '9');
+    rect.setAttribute('y', '9');
+    rect.setAttribute('width', '13');
+    rect.setAttribute('height', '13');
+    rect.setAttribute('rx', '2');
+    rect.setAttribute('ry', '2');
+    svg.appendChild(rect);
+    
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1');
+    svg.appendChild(path);
+    
+    return svg;
+  }
+
+  function createCheckIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'copy-icon');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.style.color = 'var(--accent-green)';
+    
+    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    polyline.setAttribute('points', '20 6 9 17 4 12');
+    svg.appendChild(polyline);
+    
+    return svg;
+  }
+
   // Convert name to lowercase-dashed shortName (slug)
   function toShortName(name) {
     if (!name) return "";
@@ -2134,7 +2229,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnEdit.type = 'button';
       btnEdit.className = 'btn-edit-row';
       btnEdit.title = 'Edit color';
-      btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>`;
+      btnEdit.appendChild(createEditIcon());
       btnEdit.addEventListener('click', () => {
         editingExtColorIdx = cIdx;
         ecName.value = color.name;
@@ -2154,7 +2249,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnDel.type = 'button';
       btnDel.className = 'btn-delete-row';
       btnDel.title = 'Remove color';
-      btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+      btnDel.appendChild(createDeleteIcon());
       btnDel.addEventListener('click', () => {
         extColors.splice(cIdx, 1);
         if (editingExtColorIdx === cIdx) {
@@ -2225,7 +2320,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnEdit.type = 'button';
       btnEdit.className = 'btn-edit-row';
       btnEdit.title = 'Edit wheel';
-      btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>`;
+      btnEdit.appendChild(createEditIcon());
       btnEdit.addEventListener('click', () => {
         editingWheelIdx = wIdx;
         wName.value = wheel.name === 'pending' ? '' : wheel.name;
@@ -2242,7 +2337,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnDel.type = 'button';
       btnDel.className = 'btn-delete-row';
       btnDel.title = 'Remove wheel';
-      btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+      btnDel.appendChild(createDeleteIcon());
       btnDel.addEventListener('click', () => {
         wheels.splice(wIdx, 1);
         if (editingWheelIdx === wIdx) {
@@ -2335,7 +2430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnEdit.type = 'button';
       btnEdit.className = 'btn-edit-row';
       btnEdit.title = 'Edit interior color';
-      btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>`;
+      btnEdit.appendChild(createEditIcon());
       btnEdit.addEventListener('click', () => {
         editingIntColorIdx = cIdx;
         icName.value = color.name;
@@ -2356,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnDel.type = 'button';
       btnDel.className = 'btn-delete-row';
       btnDel.title = 'Remove color';
-      btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+      btnDel.appendChild(createDeleteIcon());
       btnDel.addEventListener('click', () => {
         intColors.splice(cIdx, 1);
         if (editingIntColorIdx === cIdx) {
@@ -3888,17 +3983,13 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCopyJson.addEventListener('click', () => {
     const jsonString = getCleanExportJSON();
     navigator.clipboard.writeText(jsonString).then(() => {
-      const originalText = btnCopyJson.innerHTML;
-      btnCopyJson.innerHTML = `
-        <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-green);"><polyline points="20 6 9 17 4 12"/></svg>
-        Copied!
-      `;
+      btnCopyJson.replaceChildren(createCheckIcon(), document.createTextNode(" Copied!"));
       btnCopyJson.style.backgroundColor = 'rgba(74, 222, 128, 0.15)';
       btnCopyJson.style.borderColor = 'var(--accent-green)';
       btnCopyJson.style.color = 'var(--accent-green)';
       
       setTimeout(() => {
-        btnCopyJson.innerHTML = originalText;
+        btnCopyJson.replaceChildren(createCopyIcon(), document.createTextNode(" Copy"));
         btnCopyJson.style.backgroundColor = '';
         btnCopyJson.style.borderColor = '';
         btnCopyJson.style.color = '';
