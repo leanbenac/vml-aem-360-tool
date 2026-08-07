@@ -68,8 +68,11 @@ When working on this repository, you must follow these instructions:
    - Whenever you implement a new feature, modify existing functionality, or change the extension's behavior, you **MUST** automatically review and update:
      - The user-facing documentation in [README.md](file:///c:/Users/leandro.benac/Desktop/Proyectos%20Webs/vml-aem-360-tool/README.md) (keeping it clear, user-focused, and updated with any new usage steps).
      - Technical context or rules in this [AGENTS.md](file:///c:/Users/leandro.benac/Desktop/Proyectos%20Webs/vml-aem-360-tool/.agents/AGENTS.md) file if architecture or constraints change.
-2. **Automatic Version Increment:**
-   - When modifying files that impact functionality, remember that the version inside [manifest.json](file:///c:/Users/leandro.benac/Desktop/Proyectos%20Webs/vml-aem-360-tool/manifest.json) should be bumped by `0.1` (managed via local pre-commit hooks, but keep it in mind).
+2. **Manual Semantic Versioning Rule:**
+   - This repository uses manual Semantic Versioning (MAJOR.MINOR.PATCH).
+   - You must **never** automatically increment the version. The human developer will manually update the `version` field in [manifest.json](file:///c:/Users/leandro.benac/Desktop/Proyectos%20Webs/vml-aem-360-tool/manifest.json) before committing to specify if a change is a patch, a minor improvement, or a major update.
 3. **Communication Preferences:**
    - Communicate with the user in their preferred language (e.g., **Spanish**).
    - Maintain all in-code comments, variables, and technical documentation in **English**.
+4. **No Automated Commits Rule:**
+   - You must **never** execute `git commit` commands after finishing your modifications. Committing code is strictly reserved as a task for the human developer. Leave the modified files as they are for the human to review and commit manually.
